@@ -171,8 +171,8 @@ func (dbhelper *DBhelper) Exec(query string, args ...interface{}) (sql.Result, e
 	return dbhelper.DB.Exec(query, args...)
 }
 
-//NewQueryChain adds a queryChain
-func (dbhelper *DBhelper) NewQueryChain(chain QueryChain) *DBhelper {
+//AddQueryChain adds a queryChain
+func (dbhelper *DBhelper) AddQueryChain(chain QueryChain) *DBhelper {
 	dbhelper.QueryChains = append(dbhelper.QueryChains, chain)
 	return dbhelper
 }
