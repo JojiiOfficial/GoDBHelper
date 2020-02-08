@@ -54,7 +54,7 @@ func exampleMysql() *dbhelper.DBhelper {
 	host := "localhost"
 	port := "3306"
 	database := "test"
-	db, err := dbhelper.NewDbHelper(dbhelper.Mysql).Open(user, pass, host, port, database)
+	db, err := dbhelper.NewDBHelper(dbhelper.Mysql).Open(user, pass, host, port, database)
 	if err != nil {
 		fmt.Println(err.Error())
 		return nil
@@ -63,7 +63,7 @@ func exampleMysql() *dbhelper.DBhelper {
 }
 
 func exampleSqlite() *dbhelper.DBhelper {
-	db, err := dbhelper.NewDbHelper(dbhelper.Sqlite).Open("test.db")
+	db, err := dbhelper.NewDBHelper(dbhelper.Sqlite).Open("test.db")
 	if err != nil {
 		fmt.Println(err.Error())
 		return nil
@@ -72,7 +72,7 @@ func exampleSqlite() *dbhelper.DBhelper {
 }
 
 func exampleSqliteEncrypt() *dbhelper.DBhelper {
-	db, err := dbhelper.NewDbHelper(dbhelper.SqliteEncrypted).Open("test.db", "passKEY")
+	db, err := dbhelper.NewDBHelper(dbhelper.SqliteEncrypted).Open("test.db", "passKEY")
 	if err != nil {
 		fmt.Println(err.Error())
 		return nil
