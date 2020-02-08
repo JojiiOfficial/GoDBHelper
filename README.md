@@ -98,11 +98,12 @@ db.AddQueryChain(dbhelper.QueryChain{
 			QueryString:  "INSERT INTO user (id, username, password) VALUES (?,?,?)",
 			Params:       []string{"0", "admin", "lol123"},
 		},
-		//added in a later version
+		//added in a later version (version 0.1)
 		dbhelper.SQLQuery{
 			VersionAdded: 0.1,
 			QueryString:  "CREATE TABLE test1 (id int)",
 		},
+		//added in a later version (version 0.21)
 		dbhelper.SQLQuery{
 			VersionAdded: 0.21,
 			QueryString:  "INSERT INTO test1 (id) VALUES (?),(?)",
