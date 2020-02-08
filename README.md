@@ -3,7 +3,7 @@ A database helper for golang
 
 # Features
 
-- Database versioning/upgrading ()
+- Database [versioning](https://github.com/JojiiOfficial/GoDBHelper#versioning)/upgrading
 - Executing prepared/named/normal statements
 - All [sqlx](https://github.com/jmoiron/sqlx) functions
 
