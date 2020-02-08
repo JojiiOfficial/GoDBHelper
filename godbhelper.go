@@ -133,7 +133,7 @@ func (dbhelper *DBhelper) Open(params ...string) (*DBhelper, error) {
 			if err != nil {
 				return dbhelper, err
 			}
-			uri, err := buildMysqlURI(params[0], params[1], params[2], dbname, (uint16)(port))
+			uri, err := buildMySQLURI(params[0], params[1], params[2], dbname, (uint16)(port))
 			if err != nil {
 				return dbhelper, err
 			}
@@ -188,6 +188,10 @@ func (dbhelper *DBhelper) AddQueryChain(chain QueryChain) *DBhelper {
 //RunUpdate updates new sql queries
 //RunUpdate(fullUpdate, dropAllTables bool)
 func (dbhelper *DBhelper) RunUpdate(options ...bool) error {
+	if !dbhelper.Options.StoreVersionInDB {
+		return ErrCantStoreVersionInDB
+	}
+
 	var fullUpdate, dropAllTables bool
 	for i, v := range options {
 		switch i {
@@ -269,12 +273,4 @@ func (dbhelper *DBhelper) RunUpdate(options ...bool) error {
 	}
 	dbhelper.saveVersion(newVersion)
 	return nil
-}
-
-func stringArrToInterface(str []string) []interface{} {
-	params := make([]interface{}, len(str))
-	for i, p := range str {
-		params[i] = p
-	}
-	return params
 }

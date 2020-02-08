@@ -13,4 +13,6 @@ var (
 	ErrSqliteEncryptMissingArg = errors.New("SqliteEncrypt missing argument. Use Open(file, key)")
 	//ErrVersionStoreTooManyVersions if VersionStore contains more than one version
 	ErrVersionStoreTooManyVersions = errors.New("Too many versions stored in VersionStore")
+	//ErrCantStoreVersionInDB err if runnig update and StoreVersionInDB=false
+	ErrCantStoreVersionInDB = errors.New("Can't store Version in Database. Set StoreVersionInDB=true")
 )

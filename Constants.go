@@ -17,3 +17,8 @@ const (
 	//TableDBVersion tablename for db version store
 	TableDBVersion = "DBVersion"
 )
+
+const (
+	//MysqlURIFormat formats mysql uri
+	MysqlURIFormat = "%s:%s@tcp(%s:%d)/%s%s"
+)
