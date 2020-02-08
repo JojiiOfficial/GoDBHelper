@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/fatih/color"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -184,41 +185,57 @@ func (dbhelper *DBhelper) RunUpdate() error {
 	if dbhelper.Options.Debug {
 		fmt.Println("Updating database")
 	}
+
 	var c int
+	noError := true
 	newVersion := dbhelper.CurrentVersion
 
 	sort.SliceStable(dbhelper.QueryChains, func(i, j int) bool {
 		return dbhelper.QueryChains[i].Order < dbhelper.QueryChains[j].Order
 	})
+	if dbhelper.Options.Debug {
+		fmt.Println()
+	}
 
 	for _, chain := range dbhelper.QueryChains {
-		fmt.Println("chain:", chain.Name)
+		if dbhelper.Options.Debug {
+			color.New(color.Underline).Println("chain:", chain.Name)
+		}
 		sort.SliceStable(chain.Queries, func(i, j int) bool {
 			return chain.Queries[i].VersionAdded < chain.Queries[j].VersionAdded
 		})
 		for _, query := range chain.Queries {
 			if query.VersionAdded > dbhelper.CurrentVersion {
 				if dbhelper.Options.Debug {
-					fmt.Print(query.VersionAdded, "\t\"", query.QueryString, "\"", query.Params)
+					fmt.Print("v.", query.VersionAdded, ":\t\"", query.QueryString, "\"", query.Params)
 				}
-				if _, err := dbhelper.Exec(query.QueryString, stringArrToInterface(query.Params)...); err != nil {
+				var err error
+				if _, err = dbhelper.Exec(query.QueryString, stringArrToInterface(query.Params)...); err != nil {
+					fmt.Printf(" -> %s\n", color.New(color.FgRed).SprintFunc()(" ERROR: "+err.Error()))
 					if dbhelper.Options.StopUpdateOnError {
-						fmt.Println(" -> ERROR: " + err.Error())
 						return err
 					}
+					noError = false
 				}
 				if query.VersionAdded > newVersion {
 					newVersion = query.VersionAdded
 				}
-				if dbhelper.Options.Debug {
-					fmt.Println(" -> success")
+				if dbhelper.Options.Debug && err == nil {
+					fmt.Printf(" -> %s\n", color.New(color.FgGreen).SprintFunc()("success"))
 				}
 				c++
 			}
 		}
+		if dbhelper.Options.Debug {
+			fmt.Println()
+		}
 	}
 	if dbhelper.Options.Debug {
-		fmt.Printf("Updated %d Database queries\n", c)
+		msg := "Updated %d Database queries with errors\n"
+		if noError {
+			msg = "Successfully updated %d Database queries\n"
+		}
+		fmt.Printf(msg, c)
 	}
 	dbhelper.saveVersion(newVersion)
 	return nil
