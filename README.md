@@ -14,6 +14,13 @@ A database helper for golang
 - [MySQL](github.com/go-sql-driver/mysql)
 - Postgres
 
+
+# Usage
+Use one of the following imports matching the driver you want to use.<br>
+Sqlite: `github.com/mattn/go-sqlite3`<br>
+Sqlite encrypt: `github.com/CovenantSQL/go-sqlite3-encrypt`<br>
+MySQL: `github.com/go-sql-driver/mysql`<br>
+
 # Example
 
 ### Connections
