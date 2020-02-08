@@ -2,6 +2,7 @@ package godbhelper
 
 import (
 	"database/sql"
+	"strconv"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -10,6 +11,7 @@ import (
 type DBhelper struct {
 	dbKind dbsys
 	DB     *sqlx.DB
+	IsOpen bool
 }
 
 //NewDbHelper the DBhelper constructor
@@ -19,26 +21,71 @@ func NewDbHelper(dbKind dbsys) *DBhelper {
 	}
 }
 
-//Open opens the db
-//Sqlite - Open(filename)
-func (dbhelper *DBhelper) Open(params ...string) error {
+//Open db
+//Sqlite 			- Open(filename)
+//SqliteEncrypted	- Open(filename, key)
+//Mysql  			- Open(username, password, address, port, database)
+func (dbhelper *DBhelper) Open(params ...string) (*DBhelper, error) {
 	switch dbhelper.dbKind {
 	case Sqlite:
 		{
-			if dbhelper.dbKind == Sqlite {
-				db, err := sqlx.Open("sqlite3", params[0])
-				if err != nil {
-					return err
-				}
-				dbhelper.DB = db
+			var dsnFlags string
+			if len(params) > 1 {
+				dsnFlags = parseDSNstring(params[1:]...)
 			}
+			dsn := "file:" + params[0] + dsnFlags
+			db, err := sqlx.Open("sqlite3", dsn)
+			if err != nil {
+				return dbhelper, err
+			}
+			dbhelper.DB = db
+			dbhelper.IsOpen = true
+		}
+	case SqliteEncrypted:
+		{
+			if len(params) < 2 {
+				return dbhelper, ErrSqliteEncryptMissingArg
+			}
+			params[1] = "_crypto_key=" + params[1]
+			dsnFlags := parseDSNstring(params[1:]...)
+			dsn := "file:" + params[0] + dsnFlags
+			db, err := sqlx.Open("sqlite3", dsn)
+			if err != nil {
+				return dbhelper, err
+			}
+			dbhelper.DB = db
+			dbhelper.IsOpen = true
+		}
+	case Mysql:
+		{
+			if len(params) < 4 {
+				return dbhelper, ErrMysqlURIMissingArg
+			}
+			dbname := ""
+			if len(params) > 4 {
+				dbname = params[4]
+			}
+			port, err := strconv.ParseUint(params[3], 10, 16)
+			if err != nil {
+				return dbhelper, err
+			}
+			uri, err := buildMysqlURI(params[0], params[1], params[2], dbname, (uint16)(port))
+			if err != nil {
+				return dbhelper, err
+			}
+			db, err := sqlx.Open("mysql", uri)
+			if err != nil {
+				return dbhelper, err
+			}
+			dbhelper.DB = db
+			dbhelper.IsOpen = true
 		}
 	default:
 		{
-			return ErrDBNotSupported
+			return dbhelper, ErrDBNotSupported
 		}
 	}
-	return nil
+	return dbhelper, nil
 }
 
 //QueryRow runs statement and fills a with db data
