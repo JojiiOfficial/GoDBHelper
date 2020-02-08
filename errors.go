@@ -11,4 +11,6 @@ var (
 	ErrPortInvalid = errors.New("Port invalid. Port must be <= 65535 and > 0")
 	//ErrSqliteEncryptMissingArg errer if Open() SqliteEncrypt and missing argument
 	ErrSqliteEncryptMissingArg = errors.New("SqliteEncrypt missing argument. Use Open(file, key)")
+	//ErrVersionStoreTooManyVersions if VersionStore contains more than one version
+	ErrVersionStoreTooManyVersions = errors.New("Too many versions stored in VersionStore")
 )

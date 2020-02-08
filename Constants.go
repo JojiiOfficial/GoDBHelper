@@ -12,3 +12,8 @@ const (
 	//Postgres postgres db
 	Postgres
 )
+
+const (
+	//TableDBVersion tablename for db version store
+	TableDBVersion = "DBVersion"
+)
