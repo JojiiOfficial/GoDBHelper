@@ -3,8 +3,9 @@ A database helper for golang
 
 # Features
 
-- Database versioning/upgrading ()
-- Executing prepared/named/normal statements
+- Database [versioning](https://github.com/JojiiOfficial/GoDBHelper#versioning)/upgrading
+- Executing prepared/named/normal statements easily with formatting strings (queries)
+- Easily switching between Databases (see [Driver](https://github.com/JojiiOfficial/GoDBHelper#driver))
 - All [sqlx](https://github.com/jmoiron/sqlx) functions
 
 ### Driver
@@ -83,7 +84,7 @@ func exampleSqliteEncrypt() *dbhelper.DBhelper {
 
 ```
 ### Versioning
-The following code snipped demonstrates, how you can easily run new queries to upgrade the client database schema.<br>
+The following code snipped demonstrates, how your client can easily update its database to the newest version.<br>
 ```go
 //db is an instance of dbhelper.DBhelper
 db.AddQueryChain(dbhelper.QueryChain{
