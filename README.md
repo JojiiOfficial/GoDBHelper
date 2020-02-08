@@ -12,7 +12,7 @@ A database helper for golang
 - [Sqlite3](https://github.com/mattn/go-sqlite3)
 - [Sqlite3Encrypt](https://github.com/CovenantSQL/go-sqlite3-encrypt)
 - [MySQL](github.com/go-sql-driver/mysql)
-- Postgres
+- Postgres (not yet)
 
 
 # Usage
