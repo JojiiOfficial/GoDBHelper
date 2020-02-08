@@ -184,24 +184,24 @@ func (dbhelper *DBhelper) RunUpdate() error {
 		fmt.Println("Updating database")
 	}
 	var c int
+	newVersion := dbhelper.CurrentVersion
 	for _, chain := range dbhelper.QueryChains {
 		for _, query := range chain.Queries {
 			if query.VersionAdded > dbhelper.CurrentVersion {
 				if dbhelper.Options.Debug {
-					fmt.Print(query)
+					fmt.Print(query.VersionAdded, "\t\"", query.QueryString, "\"", query.Params)
 				}
-				params := make([]interface{}, len(query.Params))
-				for i, p := range query.Params {
-					params[i] = p
-				}
-				if _, err := dbhelper.Exec(query.QueryString, params...); err != nil {
+				if _, err := dbhelper.Exec(query.QueryString, stringArrToInterface(query.Params)...); err != nil {
 					if dbhelper.Options.StopUpdateOnError {
-						fmt.Println("ERROR: " + err.Error())
+						fmt.Println(" -> ERROR: " + err.Error())
 						return err
 					}
-					if dbhelper.Options.Debug {
-						fmt.Println()
-					}
+				}
+				if query.VersionAdded > newVersion {
+					newVersion = query.VersionAdded
+				}
+				if dbhelper.Options.Debug {
+					fmt.Println(" -> success")
 				}
 				c++
 			}
@@ -210,6 +210,14 @@ func (dbhelper *DBhelper) RunUpdate() error {
 	if dbhelper.Options.Debug {
 		fmt.Printf("Updated %d Database queries\n", c)
 	}
-	dbhelper.saveVersion(dbhelper.AvailableVersion)
+	dbhelper.saveVersion(newVersion)
 	return nil
+}
+
+func stringArrToInterface(str []string) []interface{} {
+	params := make([]interface{}, len(str))
+	for i, p := range str {
+		params[i] = p
+	}
+	return params
 }
