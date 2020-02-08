@@ -55,11 +55,6 @@ func NewDBHelper(dbKind dbsys, bv ...bool) *DBhelper {
 		Options: options,
 	}
 
-	if options.StoreVersionInDB {
-		dbhelper.initDBVersion()
-	} else if options.Debug {
-		fmt.Println("Note: No DBVersion was restored!")
-	}
 	return &dbhelper
 }
 
@@ -152,6 +147,12 @@ func (dbhelper *DBhelper) Open(params ...string) (*DBhelper, error) {
 			return dbhelper, ErrDBNotSupported
 		}
 	}
+
+	if dbhelper.Options.StoreVersionInDB {
+		dbhelper.initDBVersion()
+	} else if dbhelper.Options.Debug {
+		fmt.Println("Note: No DBVersion was restored!")
+	}
 	return dbhelper, nil
 }
 
@@ -189,7 +190,11 @@ func (dbhelper *DBhelper) RunUpdate() error {
 				if dbhelper.Options.Debug {
 					fmt.Print(query)
 				}
-				if _, err := dbhelper.DB.Exec(query.QueryString, query.Params); err != nil {
+				params := make([]interface{}, len(query.Params))
+				for i, p := range query.Params {
+					params[i] = p
+				}
+				if _, err := dbhelper.Exec(query.QueryString, params...); err != nil {
 					if dbhelper.Options.StopUpdateOnError {
 						fmt.Println("ERROR: " + err.Error())
 						return err
