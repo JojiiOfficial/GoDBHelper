@@ -3,6 +3,7 @@ package godbhelper
 import (
 	"database/sql"
 	"fmt"
+	"sort"
 	"strconv"
 
 	"github.com/jmoiron/sqlx"
@@ -185,7 +186,16 @@ func (dbhelper *DBhelper) RunUpdate() error {
 	}
 	var c int
 	newVersion := dbhelper.CurrentVersion
+
+	sort.SliceStable(dbhelper.QueryChains, func(i, j int) bool {
+		return dbhelper.QueryChains[i].Order < dbhelper.QueryChains[j].Order
+	})
+
 	for _, chain := range dbhelper.QueryChains {
+		fmt.Println("chain:", chain.Name)
+		sort.SliceStable(chain.Queries, func(i, j int) bool {
+			return chain.Queries[i].VersionAdded < chain.Queries[j].VersionAdded
+		})
 		for _, query := range chain.Queries {
 			if query.VersionAdded > dbhelper.CurrentVersion {
 				if dbhelper.Options.Debug {
