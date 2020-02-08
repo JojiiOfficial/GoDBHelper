@@ -174,6 +174,11 @@ func (dbhelper *DBhelper) Exec(query string, args ...interface{}) (sql.Result, e
 	return dbhelper.DB.Exec(query, args...)
 }
 
+//Execf executes a formatted query in DB
+func (dbhelper *DBhelper) Execf(queryFormat string, formatParams []string, args ...interface{}) (sql.Result, error) {
+	return dbhelper.DB.Exec(fmt.Sprintf(queryFormat, stringArrToInterface(formatParams)...), args...)
+}
+
 //AddQueryChain adds a queryChain
 func (dbhelper *DBhelper) AddQueryChain(chain QueryChain) *DBhelper {
 	dbhelper.QueryChains = append(dbhelper.QueryChains, chain)
@@ -227,6 +232,7 @@ func (dbhelper *DBhelper) RunUpdate(options ...bool) error {
 		sort.SliceStable(chain.Queries, func(i, j int) bool {
 			return chain.Queries[i].VersionAdded < chain.Queries[j].VersionAdded
 		})
+		o := 0
 		for _, query := range chain.Queries {
 			if query.VersionAdded > dbhelper.CurrentVersion {
 				if dbhelper.Options.Debug {
@@ -245,11 +251,12 @@ func (dbhelper *DBhelper) RunUpdate(options ...bool) error {
 				}
 				if dbhelper.Options.Debug && err == nil {
 					fmt.Printf(" -> %s\n", color.New(color.FgGreen).SprintFunc()("success"))
+					o++
 				}
 				c++
 			}
 		}
-		if dbhelper.Options.Debug {
+		if dbhelper.Options.Debug && o > 0 {
 			fmt.Println()
 		}
 	}
