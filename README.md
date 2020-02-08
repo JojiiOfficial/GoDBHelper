@@ -4,8 +4,11 @@ A database helper for golang
 # Features
 
 - Database versioning/upgrading
-- Simple functions
+- Executing prepared/named/normal statements
+- All [sqlx](https://github.com/jmoiron/sqlx) functions
 
 ### Driver
-- MySQL
-- Sqlite
+- [Sqlite3](https://github.com/mattn/go-sqlite3)
+- [Sqlite3Encrypt](https://github.com/CovenantSQL/go-sqlite3-encrypt)
+- [MySQL](github.com/go-sql-driver/mysql)
+- Postgres
