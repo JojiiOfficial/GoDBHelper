@@ -85,7 +85,7 @@ func exampleSqliteEncrypt() *dbhelper.DBhelper {
 ### Versioning
 The following code snipped demonstrates, how you can easily run new queries to upgrade the client database schema.<br>
 ```go
-
+//db is an instance of dbhelper.DBhelper
 db.AddQueryChain(dbhelper.QueryChain{
 	Name: "chain1",
 	Queries: []dbhelper.SQLQuery{
