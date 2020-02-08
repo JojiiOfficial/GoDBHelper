@@ -181,22 +181,45 @@ func (dbhelper *DBhelper) AddQueryChain(chain QueryChain) *DBhelper {
 }
 
 //RunUpdate updates new sql queries
-func (dbhelper *DBhelper) RunUpdate() error {
+//RunUpdate(fullUpdate, dropAllTables bool)
+func (dbhelper *DBhelper) RunUpdate(options ...bool) error {
+	var fullUpdate, dropAllTables bool
+	for i, v := range options {
+		switch i {
+		case 0:
+			fullUpdate = v
+		case 1:
+			dropAllTables = v
+		}
+	}
+
 	if dbhelper.Options.Debug {
-		fmt.Println("Updating database")
+		var add string
+		if fullUpdate {
+			add = "full"
+		}
+		fmt.Printf("Updating database %s\n", add)
+	}
+
+	if fullUpdate {
+		dbhelper.CurrentVersion = 0
+	}
+
+	if dropAllTables {
+		//TODO
 	}
 
 	var c int
 	noError := true
 	newVersion := dbhelper.CurrentVersion
 
-	sort.SliceStable(dbhelper.QueryChains, func(i, j int) bool {
-		return dbhelper.QueryChains[i].Order < dbhelper.QueryChains[j].Order
-	})
 	if dbhelper.Options.Debug {
 		fmt.Println()
 	}
 
+	sort.SliceStable(dbhelper.QueryChains, func(i, j int) bool {
+		return dbhelper.QueryChains[i].Order < dbhelper.QueryChains[j].Order
+	})
 	for _, chain := range dbhelper.QueryChains {
 		if dbhelper.Options.Debug {
 			color.New(color.Underline).Println("chain:", chain.Name)
