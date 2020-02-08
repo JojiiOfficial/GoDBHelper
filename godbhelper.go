@@ -80,6 +80,14 @@ func (dbhelper *DBhelper) initDBVersion() error {
 	return nil
 }
 
+func (dbhelper *DBhelper) saveVersion(version float32) {
+	if dbhelper.Options.StoreVersionInDB {
+		dbhelper.Exec("DELETE FROM " + TableDBVersion)
+		dbhelper.Exec(fmt.Sprintf("INSERT INTO %s (version) VALUES (?)", TableDBVersion), version)
+	}
+	dbhelper.CurrentVersion = version
+}
+
 //Open db
 //Sqlite 			- Open(filename)
 //SqliteEncrypted	- Open(filename, key)
@@ -197,6 +205,6 @@ func (dbhelper *DBhelper) RunUpdate() error {
 	if dbhelper.Options.Debug {
 		fmt.Printf("Updated %d Database queries\n", c)
 	}
-	dbhelper.CurrentVersion = dbhelper.AvailableVersion
+	dbhelper.saveVersion(dbhelper.AvailableVersion)
 	return nil
 }
