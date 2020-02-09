@@ -15,4 +15,9 @@ var (
 	ErrVersionStoreTooManyVersions = errors.New("Too many versions stored in VersionStore")
 	//ErrCantStoreVersionInDB err if runnig update and StoreVersionInDB=false
 	ErrCantStoreVersionInDB = errors.New("Can't store Version in Database. Set StoreVersionInDB=true")
+
+	//QueryBuilder errors
+
+	//ErrNoStruct if the given data is no struct
+	ErrNoStruct = errors.New("Data must be a struct")
 )
