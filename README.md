@@ -96,6 +96,7 @@ The following code snipped demonstrates, how your client can easily update its d
 //db is an instance of dbhelper.DBhelper
 
 //load sql queries from .sql file
+//Queriess loaded from this function (LoadQueries) are always version 0
 db.LoadQueries("chain1", "./test.sql", 0)
 
 //Add sql queries manually
