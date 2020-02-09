@@ -37,7 +37,7 @@ import (
 )
 
 type testUser struct {
-	ID       int    `db:"id"`
+	ID       int    `db:"id" orm:"pk,ai"`
 	Username string `db:"username"`
 	Pass     string `db:"password"`
 }
