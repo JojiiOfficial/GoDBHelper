@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 //SQLColumn a column in a table
@@ -22,22 +23,50 @@ func (dbhelper *DBhelper) create(name string, data interface{}, additionalFields
 	}
 
 	v := reflect.ValueOf(data)
-	var sbuff string
+	var sbuff, pk string
+
 	for i := 0; i < v.NumField(); i++ {
-		f := v.Field(i)
-		if getSQLKind(f.Kind(), dbhelper.dbKind) == "" {
-			return errors.New("Kind " + f.Kind().String() + " not supported")
-		}
-		colName := v.Type().Field(i).Name
-		if len(v.Type().Field(i).Tag.Get("db")) > 0 {
-			colName = v.Type().Field(i).Tag.Get("db")
+		field := v.Field(i)
+		tag := v.Type().Field(i).Tag
+
+		if getSQLKind(field.Kind(), dbhelper.dbKind) == "" {
+			return errors.New("Kind " + field.Kind().String() + " not supported")
 		}
 
-		colType := f.Type().Name()
+		colName := v.Type().Field(i).Name
+		colType := getSQLKind(field.Kind(), dbhelper.dbKind)
+
+		if len(tag.Get("db")) > 0 {
+			colName = tag.Get("db")
+		}
+
+		if len(tag.Get("orm")) > 0 {
+			var arr []string
+			if strings.Contains(tag.Get("orm"), ",") {
+				arr = strings.Split(tag.Get("orm"), ",")
+			} else {
+				arr = append(arr, tag.Get("orm"))
+			}
+			for _, tag := range arr {
+				switch tag {
+				case "pk":
+					pk = colName
+				case "ai":
+					{
+						colType += " AUTO_INCREMENT"
+					}
+				}
+			}
+		}
 
 		sbuff += colName + " " + colType + ", "
 	}
-	query := fmt.Sprintf("CREATE TABLE %s (%s)", name, sbuff[:len(sbuff)-2])
+
+	if len(pk) > 0 {
+		pk = fmt.Sprintf(", PRIMARY KEY (`%s`)", pk)
+	}
+
+	query := fmt.Sprintf("CREATE TABLE %s (%s%s)", name, sbuff[:len(sbuff)-2], pk)
 	_, err := dbhelper.Exec(query)
 	return err
 }
