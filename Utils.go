@@ -32,3 +32,12 @@ func stringArrToInterface(str []string) []interface{} {
 	}
 	return params
 }
+
+func strArrHas(arr []string, has string) bool {
+	for _, a := range arr {
+		if a == has {
+			return true
+		}
+	}
+	return false
+}

@@ -25,6 +25,7 @@ func (dbhelper *DBhelper) create(name string, data interface{}, additionalFields
 	v := reflect.ValueOf(data)
 	var sbuff, pk string
 
+fl:
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Field(i)
 		tag := v.Type().Field(i).Tag
@@ -47,6 +48,11 @@ func (dbhelper *DBhelper) create(name string, data interface{}, additionalFields
 			} else {
 				arr = append(arr, tag.Get("orm"))
 			}
+
+			if strArrHas(arr, "-") {
+				continue fl
+			}
+
 			for _, tag := range arr {
 				switch tag {
 				case "pk":
@@ -59,15 +65,18 @@ func (dbhelper *DBhelper) create(name string, data interface{}, additionalFields
 			}
 		}
 
-		sbuff += colName + " " + colType + ", "
+		sbuff += "`" + colName + "` " + colType + ", "
 	}
 
 	if len(pk) > 0 {
 		pk = fmt.Sprintf(", PRIMARY KEY (`%s`)", pk)
 	}
 
-	query := fmt.Sprintf("CREATE TABLE %s (%s%s)", name, sbuff[:len(sbuff)-2], pk)
+	query := fmt.Sprintf("CREATE TABLE `%s` (%s%s)", name, sbuff[:len(sbuff)-2], pk)
 	_, err := dbhelper.Exec(query)
+	if dbhelper.Options.Debug {
+		fmt.Println(query)
+	}
 	return err
 }
 
@@ -95,6 +104,7 @@ func getSQLKind(kind reflect.Kind, database dbsys) string {
 		return ""
 	}
 }
+
 func boolValue(database dbsys) string {
 	switch database {
 	case Sqlite, SqliteEncrypted:
