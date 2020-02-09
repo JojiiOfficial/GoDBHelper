@@ -94,8 +94,15 @@ func exampleSqliteEncrypt() *dbhelper.DBhelper {
 The following code snipped demonstrates, how your client can easily update its database to the newest version.<br>
 ```go
 //db is an instance of dbhelper.DBhelper
+
+//load sql queries from .sql file
+db.LoadQueries("chain1", "./test.sql", 0)
+
+//Add sql queries manually
+//The order specifies the execution order of the queries. So in this case, chain1 would be loaded before chain2
 db.AddQueryChain(dbhelper.QueryChain{
-	Name: "chain1",
+	Order: 1,
+	Name: "chain2",
 	Queries: []dbhelper.SQLQuery{
 		dbhelper.SQLQuery{
 			VersionAdded: 0,
