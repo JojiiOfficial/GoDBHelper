@@ -22,3 +22,11 @@ const (
 	//MysqlURIFormat formats mysql uri
 	MysqlURIFormat = "%s:%s@tcp(%s:%d)/%s%s"
 )
+
+//Tags
+const (
+	//OrmTag orm-tag
+	OrmTag = "orm"
+	//DBTag db-tag
+	DBTag = "db"
+)

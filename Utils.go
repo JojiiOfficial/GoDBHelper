@@ -41,3 +41,10 @@ func strArrHas(arr []string, has string) bool {
 	}
 	return false
 }
+
+func parsetTag(tagContent string) []string {
+	if strings.Contains(tagContent, ",") {
+		return strings.Split(tagContent, ",")
+	}
+	return []string{tagContent}
+}

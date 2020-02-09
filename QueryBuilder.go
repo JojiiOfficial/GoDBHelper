@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"strings"
 )
 
 //SQLColumn a column in a table
@@ -25,7 +24,6 @@ func (dbhelper *DBhelper) create(name string, data interface{}, additionalFields
 	v := reflect.ValueOf(data)
 	var sbuff, pk string
 
-fl:
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Field(i)
 		tag := v.Type().Field(i).Tag
@@ -37,23 +35,21 @@ fl:
 		colName := v.Type().Field(i).Name
 		colType := getSQLKind(field.Kind(), dbhelper.dbKind)
 
-		if len(tag.Get("db")) > 0 {
-			colName = tag.Get("db")
+		//Tags
+		dbTag := tag.Get(DBTag)
+		ormtag := tag.Get(OrmTag)
+
+		if len(dbTag) > 0 {
+			colName = dbTag
 		}
 
-		if len(tag.Get("orm")) > 0 {
-			var arr []string
-			if strings.Contains(tag.Get("orm"), ",") {
-				arr = strings.Split(tag.Get("orm"), ",")
-			} else {
-				arr = append(arr, tag.Get("orm"))
+		if len(ormtag) > 0 {
+			ormTagList := parsetTag(ormtag)
+			if strArrHas(ormTagList, "-") {
+				continue
 			}
 
-			if strArrHas(arr, "-") {
-				continue fl
-			}
-
-			for _, tag := range arr {
+			for _, tag := range ormTagList {
 				switch tag {
 				case "pk":
 					pk = colName
@@ -65,7 +61,8 @@ fl:
 			}
 		}
 
-		sbuff += "`" + colName + "` " + colType + ", "
+		colName = fmt.Sprintf("`%s`", colName)
+		sbuff += fmt.Sprintf("%s %s, ", colName, colType)
 	}
 
 	if len(pk) > 0 {
