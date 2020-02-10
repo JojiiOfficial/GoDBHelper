@@ -98,7 +98,7 @@ type InitSQL struct {
 
 //CreateInitVersionSQL creates SQLQuery[] for init version
 func CreateInitVersionSQL(arg ...InitSQL) []SQLQuery {
-	queries := make([]SQLQuery, len(arg))
+	queries := []SQLQuery
 
 	for _, query := range arg {
 		queries = append(queries, SQLQuery{
