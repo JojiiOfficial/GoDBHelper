@@ -15,6 +15,7 @@ type DBhelperOptions struct {
 	Debug             bool
 	StopUpdateOnError bool
 	StoreVersionInDB  bool
+	UseColors         bool
 }
 
 //DBhelper the dbhelper object
@@ -35,10 +36,11 @@ type DBhelper struct {
 	QueryChains []QueryChain `json:"chains"`
 }
 
-//NewDBHelper the DBhelper constructor NewDBHelper(database, debug, stopUpdateOnError, storeVersionInDB)
+//NewDBHelper the DBhelper constructor NewDBHelper(database, debug, stopUpdateOnError, storeVersionInDB, useColors)
 func NewDBHelper(dbKind dbsys, bv ...bool) *DBhelper {
 	options := DBhelperOptions{
 		StoreVersionInDB: true,
+		UseColors:        true,
 	}
 
 	for i, v := range bv {
@@ -49,6 +51,8 @@ func NewDBHelper(dbKind dbsys, bv ...bool) *DBhelper {
 			options.StopUpdateOnError = v
 		case 2:
 			options.StoreVersionInDB = v
+		case 3:
+			options.UseColors = v
 		}
 	}
 
@@ -90,6 +94,7 @@ func (dbhelper *DBhelper) saveVersion(version float32) {
 //SqliteEncrypted	- Open(filename, key)
 //Mysql  			- Open(username, password, address, port, database)
 func (dbhelper *DBhelper) Open(params ...string) (*DBhelper, error) {
+	dbhelper.checkColors()
 	switch dbhelper.dbKind {
 	case Sqlite:
 		{
@@ -191,6 +196,7 @@ func (dbhelper *DBhelper) RunUpdate(options ...bool) error {
 	if !dbhelper.Options.StoreVersionInDB {
 		return ErrCantStoreVersionInDB
 	}
+	dbhelper.checkColors()
 
 	var fullUpdate, dropAllTables bool
 	for i, v := range options {
@@ -242,8 +248,14 @@ func (dbhelper *DBhelper) RunUpdate(options ...bool) error {
 				if dbhelper.Options.Debug {
 					fmt.Print("v.", query.VersionAdded, ":\t\"", query.QueryString, "\"", query.Params)
 				}
+
 				var err error
-				if _, err = dbhelper.Exec(query.QueryString, stringArrToInterface(query.Params)...); err != nil {
+				if len(query.QueryString) == 0 && len(query.FqueryString) > 0 {
+					_, err = dbhelper.Execf(query.FqueryString, query.Fparams, stringArrToInterface(query.Params)...)
+				} else {
+					_, err = dbhelper.Exec(query.QueryString, stringArrToInterface(query.Params)...)
+				}
+				if err != nil {
 					fmt.Printf(" -> %s\n", color.New(color.FgRed).SprintFunc()(" ERROR: "+err.Error()))
 					if dbhelper.Options.StopUpdateOnError {
 						return err
@@ -273,4 +285,8 @@ func (dbhelper *DBhelper) RunUpdate(options ...bool) error {
 	}
 	dbhelper.saveVersion(newVersion)
 	return nil
+}
+
+func (dbhelper *DBhelper) checkColors() {
+	color.NoColor = !dbhelper.Options.UseColors
 }

@@ -19,6 +19,8 @@ type SQLQuery struct {
 	VersionAdded float32  `json:"vs"`
 	QueryString  string   `json:"query"`
 	Params       []string `json:"params"`
+	FqueryString string   `json:"queryf"`
+	Fparams      []string `json:"fparams"`
 }
 
 //NewQueryChain QueryChain constructor
