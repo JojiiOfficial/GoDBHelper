@@ -133,6 +133,9 @@ func (dbhelper *DBhelper) insert(tableName string, data interface{}) (*sql.Resul
 			if strArrHas(ormTagList, "-") {
 				continue
 			}
+			if strArrHas(ormTagList, "ai") && !strArrHas(ormTagList, "iai") {
+				continue
+			}
 		}
 
 		typesBuff += fmt.Sprintf("`%s`, ", colName)
