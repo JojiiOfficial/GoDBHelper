@@ -3,7 +3,7 @@ A database helper for golang
 
 # Features
 
-- Database [versioning](https://github.com/JojiiOfficial/GoDBHelper#versioning)/upgrading
+- Database [versioning](https://github.com/JojiiOfficial/GoDBHelper#versioning)/migrating
 - Executing prepared/named/normal statements easily with formatting strings (queries)
 - Easily switching between Databases (see [Driver](https://github.com/JojiiOfficial/GoDBHelper#driver))
 - All [sqlx](https://github.com/jmoiron/sqlx) functions
@@ -90,7 +90,7 @@ func exampleSqliteEncrypt() *dbhelper.DBhelper {
 }
 
 ```
-### Versioning
+### Migrating
 The following code snipped demonstrates, how your client can easily update its database to the newest version.<br>
 ```go
 //db is an instance of dbhelper.DBhelper
