@@ -168,10 +168,19 @@ func (dbhelper *DBhelper) QueryRow(a interface{}, query string, args ...interfac
 	return dbhelper.DB.Get(a, query, args...)
 }
 
+//QueryRowf like QueryRow but formatted
+func (dbhelper *DBhelper) QueryRowf(a interface{}, query string, queryArgs []string, args ...interface{}) error {
+	return dbhelper.DB.Get(a, fmt.Sprintf(query, stringArrToInterface(queryArgs)...), args...)
+}
+
 //QueryRows like QueryRow but for multiple rows
 func (dbhelper *DBhelper) QueryRows(a interface{}, query string, args ...interface{}) error {
 	return dbhelper.DB.Select(a, query, args...)
+}
 
+//QueryRowsf like QueryRows but formatted
+func (dbhelper *DBhelper) QueryRowsf(a interface{}, query string, queryArgs []string, args ...interface{}) error {
+	return dbhelper.DB.Select(a, fmt.Sprintf(query, stringArrToInterface(queryArgs)...), args...)
 }
 
 //Exec executes command in DB
