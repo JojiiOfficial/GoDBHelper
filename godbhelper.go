@@ -258,7 +258,11 @@ func (dbhelper *DBhelper) RunUpdate(options ...bool) error {
 			}
 			if query.VersionAdded > dbhelper.CurrentVersion {
 				if dbhelper.Options.Debug {
-					fmt.Print("v.", query.VersionAdded, ":\t\"", query.QueryString, "\"", query.Params)
+					q := fmt.Sprintf(query.FqueryString, stringArrToInterface(query.Fparams)...)
+					if len(query.FqueryString) == 0 {
+						q = query.QueryString
+					}
+					fmt.Print("v.", query.VersionAdded, ":\t\"", q, "\"", query.Params)
 				}
 
 				var err error
