@@ -88,3 +88,26 @@ func (dbhelper *DBhelper) LoadQueries(name, file string, chainOrder int) error {
 	dbhelper.AddQueryChain(*queries)
 	return nil
 }
+
+//InitSQL init sql obj
+type InitSQL struct {
+	Query   string
+	Params  string
+	FParams []string
+}
+
+//CreateInitVersionSQL creates SQLQuery[] for init version
+func CreateInitVersionSQL(arg ...InitSQL) []SQLQuery {
+	queries := make([]SQLQuery, len(arg))
+
+	for _, query := range arg {
+		queries = append(queries, SQLQuery{
+			VersionAdded: 0,
+			Fparams:      query.FParams,
+			FqueryString: query.Query,
+			QueryString:  query.Query,
+		})
+	}
+
+	return queries
+}

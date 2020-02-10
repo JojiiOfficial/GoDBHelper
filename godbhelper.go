@@ -250,7 +250,7 @@ func (dbhelper *DBhelper) RunUpdate(options ...bool) error {
 				}
 
 				var err error
-				if len(query.QueryString) == 0 && len(query.FqueryString) > 0 {
+				if len(query.FqueryString) > 0 {
 					_, err = dbhelper.Execf(query.FqueryString, query.Fparams, stringArrToInterface(query.Params)...)
 				} else {
 					_, err = dbhelper.Exec(query.QueryString, stringArrToInterface(query.Params)...)
