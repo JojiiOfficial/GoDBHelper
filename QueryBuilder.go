@@ -1,9 +1,12 @@
 package godbhelper
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"reflect"
+	"strconv"
 )
 
 //SQLColumn a column in a table
@@ -77,6 +80,81 @@ func (dbhelper *DBhelper) create(name string, data interface{}, additionalFields
 	return err
 }
 
+func (dbhelper *DBhelper) insert(tableName string, data interface{}) (*sql.Result, error) {
+	t := reflect.TypeOf(data)
+	if t.Kind() != reflect.Struct {
+		return nil, ErrNoStruct
+	}
+	if len(tableName) == 0 {
+		tableName = t.Name()
+	}
+
+	v := reflect.ValueOf(data)
+	var valuesBuff, typesBuff string
+
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		tag := v.Type().Field(i).Tag
+
+		if getSQLKind(field.Kind(), dbhelper.dbKind) == "" {
+			return nil, errors.New("Kind " + field.Kind().String() + " not supported")
+		}
+
+		colName := v.Type().Field(i).Name
+		colType := field.Kind()
+
+		var cva string
+		switch colType {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			cva = strconv.FormatInt(field.Int(), 10)
+		case reflect.String:
+			cva = field.String()
+		case reflect.Float64:
+			cva = strconv.FormatFloat(field.Float(), 'f', 5, 64)
+		case reflect.Float32:
+			cva = strconv.FormatFloat(field.Float(), 'f', 5, 32)
+		case reflect.Bool:
+			cva = strconv.FormatBool(field.Bool())
+		default:
+			log.Printf("Kind %s not found!\n", colType.String())
+			return nil, errors.New("Kind not supported")
+		}
+
+		//Tags
+		dbTag := tag.Get(DBTag)
+		ormtag := tag.Get(OrmTag)
+
+		if len(dbTag) > 0 {
+			colName = dbTag
+		}
+
+		if len(ormtag) > 0 {
+			ormTagList := parsetTag(ormtag)
+			if strArrHas(ormTagList, "-") {
+				continue
+			}
+		}
+
+		typesBuff += fmt.Sprintf("`%s`, ", colName)
+
+		val := cva
+		switch colType {
+		case reflect.String:
+			val = fmt.Sprintf("`%s`", val)
+		}
+
+		valuesBuff += val + ", "
+	}
+
+	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", tableName, typesBuff[:len(typesBuff)-2], valuesBuff[:len(valuesBuff)-2])
+	if dbhelper.Options.Debug {
+		fmt.Println(query)
+	}
+
+	result, err := dbhelper.Exec(query)
+	return &result, err
+}
+
 func getSQLKind(kind reflect.Kind, database dbsys) string {
 	switch kind {
 	case reflect.String:
@@ -118,4 +196,14 @@ func boolValue(database dbsys) string {
 //Leave name empty to use the name of the struct
 func (dbhelper *DBhelper) CreateTable(name string, data interface{}, additionalFields ...SQLColumn) error {
 	return dbhelper.create(name, data, additionalFields...)
+}
+
+//Insert creates a table for struct
+//Leave name empty to use the name of the struct
+func (dbhelper *DBhelper) Insert(data interface{}, params ...string) (*sql.Result, error) {
+	var tbName string
+	if len(params) > 0 {
+		tbName = params[0]
+	}
+	return dbhelper.insert(tbName, data)
 }
