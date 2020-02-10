@@ -140,7 +140,7 @@ func (dbhelper *DBhelper) insert(tableName string, data interface{}) (*sql.Resul
 		val := cva
 		switch colType {
 		case reflect.String:
-			val = fmt.Sprintf("`%s`", val)
+			val = fmt.Sprintf("'%s'", val)
 		}
 
 		valuesBuff += val + ", "
