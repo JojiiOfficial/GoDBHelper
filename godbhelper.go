@@ -253,6 +253,9 @@ func (dbhelper *DBhelper) RunUpdate(options ...bool) error {
 		})
 		o := 0
 		for _, query := range chain.Queries {
+			if len(query.QueryString)+len(query.FqueryString) == 0 {
+				continue
+			}
 			if query.VersionAdded > dbhelper.CurrentVersion {
 				if dbhelper.Options.Debug {
 					fmt.Print("v.", query.VersionAdded, ":\t\"", query.QueryString, "\"", query.Params)
