@@ -1,0 +1,29 @@
+// cSpell Settings
+{
+    // Version of the setting file.  Always 0.1
+    "version": "0.1",
+    // language - current active spelling language
+    "language": "en",
+    "languageSettings": [
+        {
+            // use with cpp or c files
+            "languageId": "cpp,c,go,java",
+            // turn off compound words, because it is only checking strings.
+            "allowCompoundWords": false,
+            // Only check comments and strings
+            "includeRegExpList": [
+                "CStyleComment",
+                "string"
+            ],
+            // Exclude includes, because they are also strings.
+            "ignoreRegExpList": [
+                "/#include.*/"
+            ]
+        }
+    ],
+    "ignoreWords": [
+        "alecthomas",
+        "client",
+        "epping"
+    ]
+}

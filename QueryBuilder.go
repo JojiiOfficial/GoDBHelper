@@ -96,10 +96,6 @@ func (dbhelper *DBhelper) insert(tableName string, data interface{}) (*sql.Resul
 		field := v.Field(i)
 		tag := v.Type().Field(i).Tag
 
-		if getSQLKind(field.Kind(), dbhelper.dbKind) == "" {
-			return nil, errors.New("Kind " + field.Kind().String() + " not supported")
-		}
-
 		colName := v.Type().Field(i).Name
 		colType := field.Kind()
 
@@ -107,6 +103,8 @@ func (dbhelper *DBhelper) insert(tableName string, data interface{}) (*sql.Resul
 		switch colType {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			cva = strconv.FormatInt(field.Int(), 10)
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			cva = strconv.FormatUint(field.Uint(), 10)
 		case reflect.String:
 			cva = field.String()
 		case reflect.Float64:
@@ -198,7 +196,7 @@ func boolValue(database dbsys) string {
 //CreateTable creates a table for struct
 //Leave name empty to use the name of the struct
 func (dbhelper *DBhelper) CreateTable(name string, data interface{}, additionalFields ...SQLColumn) error {
-	return dbhelper.create(name, data, additionalFields...)
+	return dbhelper.handleErrHook(dbhelper.create(name, data, additionalFields...))
 }
 
 //Insert creates a table for struct
@@ -208,5 +206,6 @@ func (dbhelper *DBhelper) Insert(data interface{}, params ...string) (*sql.Resul
 	if len(params) > 0 {
 		tbName = params[0]
 	}
-	return dbhelper.insert(tbName, data)
+	res, err := dbhelper.insert(tbName, data)
+	return res, dbhelper.handleErrHook(err)
 }

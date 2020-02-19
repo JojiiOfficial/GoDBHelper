@@ -31,7 +31,7 @@ func NewQueryChain(name string, order int) *QueryChain {
 	}
 }
 
-//RestoreQueryChain loads an exported querychain from file
+//RestoreQueryChain loads an exported queryChain from file
 func RestoreQueryChain(file string) (*QueryChain, error) {
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
@@ -45,7 +45,7 @@ func RestoreQueryChain(file string) (*QueryChain, error) {
 	return &chain, nil
 }
 
-//ExportQueryChain saves/exports a querychain to a file
+//ExportQueryChain saves/exports a queryChain to a file
 func (queryChain *QueryChain) ExportQueryChain(file string, perm os.FileMode) error {
 	data, err := json.Marshal(queryChain)
 	if err != nil {
@@ -56,7 +56,7 @@ func (queryChain *QueryChain) ExportQueryChain(file string, perm os.FileMode) er
 
 //LoadQueries loads queries from a .sql file and executes the statements (row for row).
 //The SQLQuery Version of the statements are 0.
-//This is inteded to initialize the database-schema
+//This is intended to initialize the database-schema
 func LoadQueries(name, file string, chainOrder int) (*QueryChain, error) {
 	f, err := os.Open(file)
 	if err != nil {
@@ -79,11 +79,11 @@ func LoadQueries(name, file string, chainOrder int) (*QueryChain, error) {
 
 //LoadQueries loads queries from a .sql file and executes the statements (row for row).
 //The SQLQuery Version of the statements are 0.
-//This is inteded to initialize the database-schema
+//This is intended to initialize the database-schema
 func (dbhelper *DBhelper) LoadQueries(name, file string, chainOrder int) error {
 	queries, err := LoadQueries(name, file, chainOrder)
 	if err != nil {
-		return err
+		return dbhelper.handleErrHook(err)
 	}
 	dbhelper.AddQueryChain(*queries)
 	return nil
