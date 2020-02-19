@@ -116,7 +116,7 @@ func (dbhelper *DBhelper) WithHook(hook ErrHookFunc, options ...ErrHookOptions) 
 
 //WithMessage adds next log prefix
 func (dbhelper *DBhelper) WithMessage(s string) *DBhelper {
-	*dbhelper.NextLogPrefix = s
+	dbhelper.NextLogPrefix = &s
 	return dbhelper
 }
 
