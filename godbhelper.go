@@ -40,7 +40,6 @@ type DBhelper struct {
 
 	NextErrHookFunc   ErrHookFunc
 	NextErrHookOption *ErrHookOptions
-	NextLogPrefix     *string
 }
 
 //NewDBHelper the DBhelper constructor NewDBHelper(database, debug, stopUpdateOnError, storeVersionInDB, useColors)
@@ -116,7 +115,20 @@ func (dbhelper *DBhelper) WithHook(hook ErrHookFunc, options ...ErrHookOptions) 
 
 //WithMessage adds next log prefix
 func (dbhelper *DBhelper) WithMessage(s string) *DBhelper {
-	dbhelper.NextLogPrefix = &s
+	if dbhelper.NextErrHookOption == nil {
+		dbhelper.NextErrHookOption = &ErrHookOptions{
+			Prefix: s,
+		}
+	} else {
+		dbhelper.NextErrHookOption.Prefix = s
+	}
+
+	return dbhelper
+}
+
+//WithOption adds next ErrHookOption
+func (dbhelper *DBhelper) WithOption(option ErrHookOptions) *DBhelper {
+	dbhelper.NextErrHookOption = &option
 	return dbhelper
 }
 

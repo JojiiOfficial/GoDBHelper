@@ -6,27 +6,12 @@ type ErrHookFunc func(error, string, string)
 //ErrHookOptions options for ErrorHooks
 type ErrHookOptions struct {
 	ReturnNilOnErr bool
+	Prefix         string
 }
 
 func (dbhelper *DBhelper) handleErrHook(err error, content string) error {
 	if dbhelper.ErrHookFunc == nil || err == nil {
 		return err
-	}
-
-	nextPrefix := ""
-	//Use nextPrefix if not empty
-	if dbhelper.NextLogPrefix != nil {
-		nextPrefix = *dbhelper.NextLogPrefix
-		//Reset nextPrefix
-		dbhelper.NextLogPrefix = nil
-	}
-
-	//Call the correct hook
-	if dbhelper.NextErrHookFunc == nil {
-		dbhelper.ErrHookFunc(err, content, nextPrefix)
-	} else {
-		dbhelper.NextErrHookFunc(err, content, nextPrefix)
-		dbhelper.NextErrHookFunc = nil
 	}
 
 	//Use the correct options
@@ -35,6 +20,14 @@ func (dbhelper *DBhelper) handleErrHook(err error, content string) error {
 		options = dbhelper.ErrHookOptions
 	} else {
 		dbhelper.NextErrHookOption = nil
+	}
+
+	//Call the correct hook
+	if dbhelper.NextErrHookFunc == nil {
+		dbhelper.ErrHookFunc(err, content, options.Prefix)
+	} else {
+		dbhelper.NextErrHookFunc(err, content, options.Prefix)
+		dbhelper.NextErrHookFunc = nil
 	}
 
 	if options != nil && options.ReturnNilOnErr {
