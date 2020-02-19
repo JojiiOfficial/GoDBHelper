@@ -35,9 +35,12 @@ type DBhelper struct {
 	IsOpen      bool
 	QueryChains []QueryChain `json:"chains"`
 
-	ErrHookFunc       ErrHookFunc
-	ErrHookOptions    *ErrHookOptions
-	NextHookErrOption *ErrHookOptions
+	ErrHookFunc    ErrHookFunc
+	ErrHookOptions *ErrHookOptions
+
+	NextErrHookFunc   ErrHookFunc
+	NextErrHookOption *ErrHookOptions
+	NextLogPrefix     *string
 }
 
 //NewDBHelper the DBhelper constructor NewDBHelper(database, debug, stopUpdateOnError, storeVersionInDB, useColors)
@@ -100,6 +103,21 @@ func (dbhelper *DBhelper) SetErrHook(hook ErrHookFunc, options ...ErrHookOptions
 	}
 
 	dbhelper.ErrHookFunc = hook
+}
+
+//WithHook adds next log prefix
+func (dbhelper *DBhelper) WithHook(hook ErrHookFunc, options ...ErrHookOptions) *DBhelper {
+	if len(options) > 0 {
+		dbhelper.NextErrHookOption = &options[0]
+	}
+	dbhelper.NextErrHookFunc = hook
+	return dbhelper
+}
+
+//WithMessage adds next log prefix
+func (dbhelper *DBhelper) WithMessage(s string) *DBhelper {
+	*dbhelper.NextLogPrefix = s
+	return dbhelper
 }
 
 //Open db
@@ -179,7 +197,7 @@ func (dbhelper *DBhelper) Open(params ...string) (*DBhelper, error) {
 //QueryRow runs statement and fills a with db data
 func (dbhelper *DBhelper) QueryRow(a interface{}, query string, args ...interface{}) error {
 	err := dbhelper.DB.Get(a, query, args...)
-	return dbhelper.handleErrHook(err)
+	return dbhelper.handleErrHook(err, query)
 }
 
 //QueryRowf like QueryRow but formatted
@@ -189,25 +207,26 @@ func (dbhelper *DBhelper) QueryRowf(a interface{}, query string, queryArgs []str
 
 //QueryRows like QueryRow but for multiple rows
 func (dbhelper *DBhelper) QueryRows(a interface{}, query string, args ...interface{}) error {
-	return dbhelper.handleErrHook(dbhelper.DB.Select(a, query, args...))
+	return dbhelper.handleErrHook(dbhelper.DB.Select(a, query, args...), query)
 }
 
 //QueryRowsf like QueryRows but formatted
 func (dbhelper *DBhelper) QueryRowsf(a interface{}, query string, queryArgs []string, args ...interface{}) error {
-	return dbhelper.handleErrHook(dbhelper.DB.Select(a, fmt.Sprintf(query, stringArrToInterface(queryArgs)...), args...))
+	return dbhelper.handleErrHook(dbhelper.DB.Select(a, fmt.Sprintf(query, stringArrToInterface(queryArgs)...), args...), query)
 }
 
 //Exec executes command in DB
 func (dbhelper *DBhelper) Exec(query string, args ...interface{}) (sql.Result, error) {
 	res, err := dbhelper.DB.Exec(query, args...)
-	err = dbhelper.handleErrHook(err)
+	err = dbhelper.handleErrHook(err, query)
 	return res, err
 }
 
 //Execf executes a formatted query in DB
 func (dbhelper *DBhelper) Execf(queryFormat string, formatParams []string, args ...interface{}) (sql.Result, error) {
-	res, err := dbhelper.DB.Exec(fmt.Sprintf(queryFormat, stringArrToInterface(formatParams)...), args...)
-	err = dbhelper.handleErrHook(err)
+	query := fmt.Sprintf(queryFormat, stringArrToInterface(formatParams)...)
+	res, err := dbhelper.DB.Exec(query, args...)
+	err = dbhelper.handleErrHook(err, query)
 	return res, err
 }
 

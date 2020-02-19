@@ -196,7 +196,7 @@ func boolValue(database dbsys) string {
 //CreateTable creates a table for struct
 //Leave name empty to use the name of the struct
 func (dbhelper *DBhelper) CreateTable(name string, data interface{}, additionalFields ...SQLColumn) error {
-	return dbhelper.handleErrHook(dbhelper.create(name, data, additionalFields...))
+	return dbhelper.handleErrHook(dbhelper.create(name, data, additionalFields...), "creating table "+name)
 }
 
 //Insert creates a table for struct
@@ -207,5 +207,5 @@ func (dbhelper *DBhelper) Insert(data interface{}, params ...string) (*sql.Resul
 		tbName = params[0]
 	}
 	res, err := dbhelper.insert(tbName, data)
-	return res, dbhelper.handleErrHook(err)
+	return res, dbhelper.handleErrHook(err, "inserting "+tbName)
 }

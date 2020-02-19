@@ -83,7 +83,7 @@ func LoadQueries(name, file string, chainOrder int) (*QueryChain, error) {
 func (dbhelper *DBhelper) LoadQueries(name, file string, chainOrder int) error {
 	queries, err := LoadQueries(name, file, chainOrder)
 	if err != nil {
-		return dbhelper.handleErrHook(err)
+		return dbhelper.handleErrHook(err, "loading Queries: "+name)
 	}
 	dbhelper.AddQueryChain(*queries)
 	return nil
