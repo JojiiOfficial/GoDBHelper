@@ -213,8 +213,9 @@ func (dbhelper *DBhelper) QueryRow(a interface{}, query string, args ...interfac
 }
 
 //QueryRowf like QueryRow but formatted
-func (dbhelper *DBhelper) QueryRowf(a interface{}, query string, queryArgs []string, args ...interface{}) error {
-	return dbhelper.DB.Get(a, fmt.Sprintf(query, stringArrToInterface(queryArgs)...), args...)
+func (dbhelper *DBhelper) QueryRowf(a interface{}, queryf string, queryArgs []string, args ...interface{}) error {
+	query := fmt.Sprintf(queryf, stringArrToInterface(queryArgs)...)
+	return dbhelper.handleErrHook(dbhelper.DB.Get(a, query, args...), query)
 }
 
 //QueryRows like QueryRow but for multiple rows
