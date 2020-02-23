@@ -9,6 +9,9 @@ type ErrHookOptions struct {
 	Prefix         string
 }
 
+//NoHook run a query without a hook
+var NoHook = func(err error, s1, s2 string) {}
+
 func (dbhelper *DBhelper) handleErrHook(err error, content string) error {
 	if dbhelper.ErrHookFunc == nil || err == nil {
 		return err
