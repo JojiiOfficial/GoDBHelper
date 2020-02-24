@@ -180,6 +180,24 @@ func getSQLKind(kind reflect.Kind, database dbsys) string {
 		return ""
 	}
 }
+func float64Value(databate dbsys) string {
+	switch databate {
+	case Sqlite, SqliteEncrypted, Mysql:
+		return "DOUBLE"
+	case Postgres:
+		return "numeric"
+	}
+	return ""
+}
+func float32Value(databate dbsys) string {
+	switch databate {
+	case Sqlite, SqliteEncrypted, Mysql:
+		return "FLOAT"
+	case Postgres:
+		return "REAL"
+	}
+	return ""
+}
 
 func boolValue(database dbsys) string {
 	switch database {

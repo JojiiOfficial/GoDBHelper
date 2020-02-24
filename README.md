@@ -12,7 +12,8 @@ A database helper for golang
 - [Sqlite3](https://github.com/mattn/go-sqlite3)
 - [Sqlite3Encrypt](https://github.com/CovenantSQL/go-sqlite3-encrypt)
 - [MySQL](github.com/go-sql-driver/mysql)
-- Postgres (not yet)
+- [Postgres](github.com/lib/pq)
+
 
 
 # Usage
@@ -20,6 +21,7 @@ Use one of the following imports matching the driver you want to use.<br>
 Sqlite: `github.com/mattn/go-sqlite3`<br>
 Sqlite encrypt: `github.com/CovenantSQL/go-sqlite3-encrypt`<br>
 MySQL: `github.com/go-sql-driver/mysql`<br>
+PostgreSQL: `github.com/lib/pq`<br>
 
 # Example
 
@@ -33,6 +35,7 @@ import (
 
 	//_ "github.com/go-sql-driver/mysql"
 	//_ "github.com/mattn/go-sqlite3"
+	//_ "github.com/lib/pq"
 	_ "github.com/CovenantSQL/go-sqlite3-encrypt"
 )
 

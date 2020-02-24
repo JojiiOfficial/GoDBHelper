@@ -71,13 +71,13 @@ func NewDBHelper(dbKind dbsys, bv ...bool) *DBhelper {
 }
 
 func (dbhelper *DBhelper) initDBVersion() error {
-	dbhelper.Exec(fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (version FLOAT)", TableDBVersion))
+	dbhelper.Exec(fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (version %s)", TableDBVersion, float32Value(dbhelper.dbKind)))
 
 	var c int
 	dbhelper.QueryRow(&c, "SELECT COUNT(*) FROM "+TableDBVersion)
 
 	if c == 0 {
-		dbhelper.Exec(fmt.Sprintf("INSERT INTO %s (version) VALUES (?)", TableDBVersion), -1.0)
+		dbhelper.Exec(fmt.Sprintf("INSERT INTO %s (version) VALUES ($1)", TableDBVersion), -1.0)
 	} else if c > 1 {
 		return ErrVersionStoreTooManyVersions
 	}
@@ -90,7 +90,7 @@ func (dbhelper *DBhelper) initDBVersion() error {
 func (dbhelper *DBhelper) saveVersion(version float32) {
 	if dbhelper.Options.StoreVersionInDB {
 		dbhelper.Exec("DELETE FROM " + TableDBVersion)
-		dbhelper.Exec(fmt.Sprintf("INSERT INTO %s (version) VALUES (?)", TableDBVersion), version)
+		dbhelper.Exec(fmt.Sprintf("INSERT INTO %s (version) VALUES ($1)", TableDBVersion), version)
 	}
 	dbhelper.CurrentVersion = version
 }
