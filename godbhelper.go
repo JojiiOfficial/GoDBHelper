@@ -136,6 +136,7 @@ func (dbhelper *DBhelper) WithOption(option ErrHookOptions) *DBhelper {
 //Sqlite 			- Open(filename)
 //SqliteEncrypted	- Open(filename, key)
 //Mysql  			- Open(username, password, address, port, database)
+//Postgres 			- Open(username, password, address, port, database)
 func (dbhelper *DBhelper) Open(params ...string) (*DBhelper, error) {
 	dbhelper.checkColors()
 	switch dbhelper.dbKind {
@@ -186,6 +187,30 @@ func (dbhelper *DBhelper) Open(params ...string) (*DBhelper, error) {
 				return dbhelper, err
 			}
 			db, err := sqlx.Open("mysql", uri)
+			if err != nil {
+				return dbhelper, err
+			}
+			dbhelper.DB = db
+			dbhelper.IsOpen = true
+		}
+	case Postgres:
+		{
+			if len(params) < 4 {
+				return dbhelper, ErrPostgresURIMissingArg
+			}
+			var dbname string
+			if len(params) > 4 {
+				dbname = params[4]
+			}
+			port, err := strconv.ParseUint(params[3], 10, 16)
+			if err != nil {
+				return dbhelper, err
+			}
+			uri, err := buildPostgresString(params[0], params[1], params[2], dbname, (uint16)(port))
+			if err != nil {
+				return dbhelper, err
+			}
+			db, err := sqlx.Open("postgres", uri)
 			if err != nil {
 				return dbhelper, err
 			}

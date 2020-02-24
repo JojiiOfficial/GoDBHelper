@@ -21,6 +21,14 @@ func parseDSNstring(arg ...string) string {
 	return ""
 }
 
+func parsePostgresString(arg ...string) string {
+	if len(arg) > 0 {
+		dsn := strings.Join(arg, " ")
+		return dsn
+	}
+	return ""
+}
+
 func isPortValid(port uint16) bool {
 	return port > 0 && port <= 65535
 }

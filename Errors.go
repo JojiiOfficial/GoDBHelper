@@ -5,6 +5,8 @@ import "errors"
 var (
 	//ErrDBNotSupported error if database is not supported
 	ErrDBNotSupported = errors.New("Database not supported")
+	//ErrPostgresURIMissingArg error if Open() mysqlDB and missing an arg
+	ErrPostgresURIMissingArg = errors.New("Postgres missing argument. Use Open(username, password, address, port, database)")
 	//ErrMysqlURIMissingArg error if Open() mysqlDB and missing an arg
 	ErrMysqlURIMissingArg = errors.New("MYSQL missing argument. Use Open(username, password, address, port, database)")
 	//ErrPortInvalid if given port is invalid
