@@ -11,8 +11,8 @@ A database helper for golang
 ### Driver
 - [Sqlite3](https://github.com/mattn/go-sqlite3)
 - [Sqlite3Encrypt](https://github.com/CovenantSQL/go-sqlite3-encrypt)
-- [MySQL](github.com/go-sql-driver/mysql)
-- [Postgres](github.com/lib/pq)
+- [MySQL](https://github.com/go-sql-driver/mysql)
+- [Postgres](https://github.com/lib/pq)
 
 
 
