@@ -99,8 +99,18 @@ func mysqlExample(){
 		SetPK:        true,
 	})
 	_ = resultSet
+
+	//Load the new entry in s2. Note that you have to set parseTime=True to read 'createdAt' in a time.Time struct
+	var s2 TestStruct
+	err = db.QueryRow(&s2, "SELECT * FROM TestStruct WHERE pk_id=?", s1.Pkid)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(s2)
+	}
 }
 
+//Connect to Mysql and return a DBhelper pointer
 func connectToMysql() *dbhelper.DBhelper {
 	user := "dbUser"
 	pass := "pleaseMakeItSafe"
@@ -135,12 +145,13 @@ func connectToSqliteEncrypt() *dbhelper.DBhelper {
 
 ```
 ### Migrating
-The following code snipped demonstrates, how your client can easily update its database to the newest version.<br>
+The following codesnippet demonstrates, how you can integrate database migration to your applications<br>
+
 ```go
 //db is an instance of dbhelper.DBhelper
 
 //load sql queries from .sql file
-//Queriess loaded from this function (LoadQueries) are always version 0
+//Queries loaded from this function (LoadQueries) are always version 0. The last argument ('0') specifies the order of the chains.
 db.LoadQueries("chain1", "./test.sql", 0)
 
 //Add sql queries manually
@@ -178,4 +189,3 @@ if err != nil {
 	fmt.Println("Err updating", err.Error())
 }
 ```
-If you add some queries in a later version, the only thing you have to do is adding a SQLQuery element to this array with a new and bigger version number. Clients wich are running on a lower version number, will run this SQL queries directly on the first run after updating (eg. `git pull` or a `docker pull`).
