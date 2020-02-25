@@ -5,12 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"time"
 )
 
 //InsertOption options for inserting structs into DB
 type InsertOption struct {
-	TableName    string
-	IgnoreFields []string
+	TableName        string
+	IgnoreFields     []string
+	SetPK            bool
+	FillNotSetFields bool
 }
 
 //CreateOption options for inserting structs into DB
@@ -37,10 +40,12 @@ func (dbhelper *DBhelper) create(data interface{}, option *CreateOption) error {
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Field(i)
 
+		//fmt.Println(field.Kind(), field.Type().Kind().String(), reflect.TypeOf(time.Time{}))
+
 		//Determine column type according to the used database
-		colType := getSQLKind(field.Kind(), dbhelper.dbKind)
+		colType := getSQLKind(field.Type(), dbhelper.dbKind)
 		if colType == "" {
-			return errors.New("Kind " + field.Kind().String() + " not supported")
+			return errors.New("Kind " + field.Type().String() + " not supported")
 		}
 
 		tag := v.Type().Field(i).Tag
@@ -77,7 +82,7 @@ func (dbhelper *DBhelper) create(data interface{}, option *CreateOption) error {
 		//Set default value if available
 		defaultTag := tag.Get(DefaultTag)
 		if len(defaultTag) > 0 {
-			colType += " DEFAULT '" + defaultTag + "'"
+			colType += " DEFAULT " + defaultTag
 		}
 
 		colName = fmt.Sprintf("`%s`", colName)
@@ -104,22 +109,42 @@ func (dbhelper *DBhelper) create(data interface{}, option *CreateOption) error {
 
 func (dbhelper *DBhelper) insert(data interface{}, option *InsertOption) (*sql.Result, error) {
 	t := reflect.TypeOf(data)
+	isPointer := false
+
+	//Use Elem() if data is pointer
+	if t.Kind() == reflect.Ptr {
+		isPointer = true
+		t = t.Elem()
+	}
+
+	//Check if data (or its value) is a struct
 	if t.Kind() != reflect.Struct {
 		return nil, ErrNoStruct
 	}
 
-	var tableName string
-
 	//Use option table name if available
+	var tableName string
 	if option != nil && len(option.TableName) > 0 {
 		tableName = option.TableName
 	} else {
 		tableName = t.Name()
 	}
 
+	//Use correct reflect.Value
 	v := reflect.ValueOf(data)
-	var valuesBuff, typesBuff string
+	if isPointer {
+		v = v.Elem()
+	}
 
+	//Return error if can't address input but SetPK is required
+	if !v.CanSet() && option != nil && option.SetPK {
+		return nil, ErrCantAddress
+	}
+
+	var pkField *reflect.Value
+
+	//Loop fields
+	var valuesBuff, typesBuff string
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Field(i)
 		tag := v.Type().Field(i).Tag
@@ -128,9 +153,19 @@ func (dbhelper *DBhelper) insert(data interface{}, option *InsertOption) (*sql.R
 		colType := field.Kind()
 
 		//Get value of field as string
-		cva, err := strValueFromReflect(field)
+		cva, defaultVal, err := strValueFromReflect(field)
 		if err != nil {
 			return nil, err
+		}
+
+		//Skip empty fields
+		if len(cva) == 0 && (option != nil && !option.FillNotSetFields) {
+			continue
+		}
+
+		//Set default value if not skipping
+		if len(cva) == 0 {
+			cva = defaultVal
 		}
 
 		//Tags
@@ -146,6 +181,13 @@ func (dbhelper *DBhelper) insert(data interface{}, option *InsertOption) (*sql.R
 
 		if len(ormtag) > 0 {
 			ormTagList := parsetTag(ormtag)
+
+			//Set pkField to cur fieldAddress to set the new PK
+			if option != nil && option.SetPK &&
+				strArrHas(ormTagList, TagAutoincrement) && strArrHas(ormTagList, TagPrimaryKey) {
+				pkField = &field
+			}
+
 			if strArrHas(ormTagList, TagIgnore) || (strArrHas(ormTagList, TagAutoincrement) && !strArrHas(ormTagList, TagInsertAutoincrement)) {
 				continue
 			}
@@ -171,11 +213,24 @@ func (dbhelper *DBhelper) insert(data interface{}, option *InsertOption) (*sql.R
 	}
 
 	result, err := dbhelper.Exec(query)
+
+	if pkField != nil && err == nil && result != nil {
+		id, err := result.LastInsertId()
+		if err != nil {
+			return &result, err
+		}
+		if isUnsigned(pkField.Type().Kind()) {
+			pkField.SetUint(uint64(id))
+		} else {
+			pkField.SetInt(id)
+		}
+	}
+
 	return &result, err
 }
 
-func getSQLKind(kind reflect.Kind, database dbsys) string {
-	switch kind {
+func getSQLKind(kind reflect.Type, database dbsys) string {
+	switch kind.Kind() {
 	case reflect.String:
 		return "TEXT"
 	case reflect.Float32:
@@ -200,6 +255,15 @@ func getSQLKind(kind reflect.Kind, database dbsys) string {
 		return intValue(database, 32, true)
 	case reflect.Uint64:
 		return intValue(database, 64, true)
+	case reflect.Struct:
+		{
+			switch kind {
+			case reflect.TypeOf(time.Time{}):
+				return "TIMESTAMP"
+			default:
+				return ""
+			}
+		}
 	default:
 		return ""
 	}

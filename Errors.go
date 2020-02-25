@@ -31,4 +31,7 @@ var (
 
 	//ErrNoRowsInResultSet error if no rows in resultSet
 	ErrNoRowsInResultSet = "sql: no rows in result set"
+
+	//ErrCantAddress if input is no pointer
+	ErrCantAddress = errors.New("Can't address value")
 )
