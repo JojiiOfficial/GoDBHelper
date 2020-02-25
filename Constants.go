@@ -31,6 +31,8 @@ const (
 	OrmTag = "orm"
 	//DBTag db-tag
 	DBTag = "db"
+	//DefaultTag default
+	DefaultTag = "default"
 )
 
 //Tag values

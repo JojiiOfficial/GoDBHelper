@@ -48,14 +48,14 @@ func (dbhelper *DBhelper) create(data interface{}, option *CreateOption) error {
 
 		//Tags
 		dbTag := tag.Get(DBTag)
-		ormtag := tag.Get(OrmTag)
+		ormTag := tag.Get(OrmTag)
 
 		if len(dbTag) > 0 {
 			colName = dbTag
 		}
 
-		if len(ormtag) > 0 {
-			ormTagList := parsetTag(ormtag)
+		if len(ormTag) > 0 {
+			ormTagList := parsetTag(ormTag)
 			if strArrHas(ormTagList, TagIgnore) {
 				continue
 			}
@@ -72,6 +72,12 @@ func (dbhelper *DBhelper) create(data interface{}, option *CreateOption) error {
 					colType += " NOT NULL"
 				}
 			}
+		}
+
+		//Set default value if available
+		defaultTag := tag.Get(DefaultTag)
+		if len(defaultTag) > 0 {
+			colType += " DEFAULT '" + defaultTag + "'"
 		}
 
 		colName = fmt.Sprintf("`%s`", colName)
