@@ -43,7 +43,7 @@ func (dbhelper *DBhelper) create(name string, data interface{}) error {
 
 		if len(ormtag) > 0 {
 			ormTagList := parsetTag(ormtag)
-			if strArrHas(ormTagList, "-") {
+			if strArrHas(ormTagList, TagIgnore) {
 				continue
 			}
 
@@ -114,7 +114,7 @@ func (dbhelper *DBhelper) insert(tableName string, data interface{}) (*sql.Resul
 
 		if len(ormtag) > 0 {
 			ormTagList := parsetTag(ormtag)
-			if strArrHas(ormTagList, "-") || (strArrHas(ormTagList, "ai") && !strArrHas(ormTagList, "pk")) {
+			if strArrHas(ormTagList, TagIgnore) || (strArrHas(ormTagList, TagAutoincrement) && !strArrHas(ormTagList, TagInsertAutoincrement)) {
 				continue
 			}
 		}

@@ -35,7 +35,10 @@ const (
 
 //Tag values
 const (
-	TagPrimaryKey    = "pk"
-	TagAutoincrement = "ai"
-	TagNotNull       = "nn"
+	TagIgnore = "-"
+
+	TagPrimaryKey          = "pk"
+	TagAutoincrement       = "ai"
+	TagInsertAutoincrement = "iai"
+	TagNotNull             = "nn"
 )
