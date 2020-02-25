@@ -98,11 +98,10 @@ func mysqlExample(){
 		//Automatically fill the PKid field in s1. Only works if the 'orm'-Tag contains 'pk' and 'ai' and the reference to s1 is passed
 		SetPK:        true,
 	})
-	_ = resultSet
 
-	//Load the new entry in s2. Note that you have to set parseTime=True to read 'createdAt' in a time.Time struct
+	//Load the new entry into s2. Note that you have to set parseTime=True to read 'createdAt' in a time.Time struct
 	var s2 TestStruct
-	err = db.QueryRow(&s2, "SELECT * FROM TestStruct WHERE pk_id=?", s1.Pkid)
+	err = db.QueryRow(&s2, "SELECT * FROM TestDB WHERE pk_id=?", s1.Pkid)
 	if err != nil {
 		fmt.Println(err)
 	} else {
@@ -135,6 +134,7 @@ func connectToSqlite() *dbhelper.DBhelper {
 }
 
 func connectToSqliteEncrypt() *dbhelper.DBhelper {
+	//Opens the encrypted test.db using 'passKEY' to decrypt it 
 	db, err := dbhelper.NewDBHelper(dbhelper.SqliteEncrypted).Open("test.db", "passKEY")
 	if err != nil {
 		fmt.Fatal(err.Error())
@@ -150,7 +150,7 @@ The following codesnippet demonstrates, how you can integrate database migration
 ```go
 //db is an instance of dbhelper.DBhelper
 
-//load sql queries from .sql file
+//load sql queries from a .sql file
 //Queries loaded from this function (LoadQueries) are always version 0. The last argument ('0') specifies the order of the chains.
 db.LoadQueries("chain1", "./test.sql", 0)
 
