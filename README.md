@@ -36,7 +36,7 @@ import (
 	//_ "github.com/go-sql-driver/mysql"
 	//_ "github.com/mattn/go-sqlite3"
 	//_ "github.com/lib/pq"
-	_ "github.com/CovenantSQL/go-sqlite3-encrypt"
+	//_ "github.com/CovenantSQL/go-sqlite3-encrypt"
 )
 
 type testUser struct {
@@ -45,8 +45,8 @@ type testUser struct {
 	Pass     string `db:"password"`
 }
 
-func main() {
-	db := exampleSqlite()
+func sqliteExample() {
+	db := connectToSqlite()
 	if db == nil {
 		return
 	}
@@ -60,33 +60,74 @@ func main() {
 	fmt.Println(user.ID, ":", user.Username, user.Pass)
 }
 
-func exampleMysql() *dbhelper.DBhelper {
+
+//TestStruct an example for MySQL
+type TestStruct struct {
+	Pkid      uint32    `db:"pk_id" orm:"pk,ai,nn"`
+	Name      string    `db:"name" orm:"nn"`
+	Age       uint8     `db:"age" orm:"nn" default:"1"`
+	Email     string    `db:"email" orm:"nn"`
+	CreatedAt time.Time `db:"createdAt" orm:"nn" default:"now()"`
+}
+
+//An example using mysql as database
+func mysqlExample(){
+	db := connectToMysql()
+	if db == nil {
+		return
+	}
+	defer db.DB.Close()
+	
+	//Create a Table from a struct. (CreateOption is optional)
+	err = db.CreateTable(TestStruct{}, &godbhelper.CreateOption{
+		//Create table if not exists
+		IfNotExists: true,
+		//Use a different name for the table than 'TestStruct'
+		TableName: "TestDB",
+	})
+	
+	s1 := TestStruct{
+		Email: "email@test.com",
+		Name:  "goDbHelper",
+	}
+
+	//Insert s1 into the Database. If you want to automatically set the PKid field, you have to pass the address of s1!
+	resultSet, err = db.Insert(&s1, &godbhelper.InsertOption{
+		//Ignore 'age' to let the DB insert the default value (otherwise it would be 0)
+		IgnoreFields: []string{"age"},
+		//Automatically fill the PKid field in s1. Only works if the 'orm'-Tag contains 'pk' and 'ai' and the reference to s1 is passed
+		SetPK:        true,
+	})
+	_ = resultSet
+}
+
+func connectToMysql() *dbhelper.DBhelper {
 	user := "dbUser"
 	pass := "pleaseMakeItSafe"
 	host := "localhost"
 	port := "3306"
 	database := "test"
-	db, err := dbhelper.NewDBHelper(dbhelper.Mysql).Open(user, pass, host, port, database)
+	db, err := dbhelper.NewDBHelper(dbhelper.Mysql).Open(user, pass, host, port, database, "parseTime=True")
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Fatal(err.Error())
 		return nil
 	}
 	return db
 }
 
-func exampleSqlite() *dbhelper.DBhelper {
+func connectToSqlite() *dbhelper.DBhelper {
 	db, err := dbhelper.NewDBHelper(dbhelper.Sqlite).Open("test.db")
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Fatal(err.Error())
 		return nil
 	}
 	return db
 }
 
-func exampleSqliteEncrypt() *dbhelper.DBhelper {
+func connectToSqliteEncrypt() *dbhelper.DBhelper {
 	db, err := dbhelper.NewDBHelper(dbhelper.SqliteEncrypted).Open("test.db", "passKEY")
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Fatal(err.Error())
 		return nil
 	}
 	return db
