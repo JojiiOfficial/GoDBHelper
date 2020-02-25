@@ -7,6 +7,12 @@ import (
 	"reflect"
 )
 
+//InsertOption options for inserting structs into DB
+type InsertOption struct {
+	TableName    string
+	IgnoreFields []string
+}
+
 func (dbhelper *DBhelper) create(name string, data interface{}) error {
 	t := reflect.TypeOf(data)
 	if t.Kind() != reflect.Struct {
@@ -77,14 +83,18 @@ func (dbhelper *DBhelper) create(name string, data interface{}) error {
 	return err
 }
 
-func (dbhelper *DBhelper) insert(tableName string, data interface{}) (*sql.Result, error) {
+func (dbhelper *DBhelper) insert(data interface{}, option *InsertOption) (*sql.Result, error) {
 	t := reflect.TypeOf(data)
-
 	if t.Kind() != reflect.Struct {
 		return nil, ErrNoStruct
 	}
 
-	if len(tableName) == 0 {
+	var tableName string
+
+	//Use option table name if available
+	if option != nil && len(option.TableName) > 0 {
+		tableName = option.TableName
+	} else {
 		tableName = t.Name()
 	}
 
@@ -109,6 +119,9 @@ func (dbhelper *DBhelper) insert(tableName string, data interface{}) (*sql.Resul
 		ormtag := tag.Get(OrmTag)
 
 		if len(dbTag) > 0 {
+			if dbTag == TagIgnore {
+				continue
+			}
 			colName = dbTag
 		}
 
@@ -117,6 +130,11 @@ func (dbhelper *DBhelper) insert(tableName string, data interface{}) (*sql.Resul
 			if strArrHas(ormTagList, TagIgnore) || (strArrHas(ormTagList, TagAutoincrement) && !strArrHas(ormTagList, TagInsertAutoincrement)) {
 				continue
 			}
+		}
+
+		//If columnName is on Ignore list, skip it
+		if option != nil && len(option.IgnoreFields) > 0 && strArrHas(option.IgnoreFields, colName) {
+			continue
 		}
 
 		typesBuff += "`" + colName + "`, "
@@ -242,12 +260,12 @@ func (dbhelper *DBhelper) CreateTable(name string, data interface{}) error {
 
 //Insert creates a table for struct
 //Leave name empty to use the name of the struct
-func (dbhelper *DBhelper) Insert(data interface{}, params ...string) (*sql.Result, error) {
-	var tbName string
-	if len(params) > 0 {
-		tbName = params[0]
+func (dbhelper *DBhelper) Insert(data interface{}, options ...*InsertOption) (*sql.Result, error) {
+	var option *InsertOption
+	if len(options) > 0 && options[0] != nil {
+		option = options[0]
 	}
 
-	res, err := dbhelper.insert(tbName, data)
-	return res, dbhelper.handleErrHook(err, "inserting "+tbName)
+	res, err := dbhelper.insert(data, option)
+	return res, dbhelper.handleErrHook(err, "inserting table")
 }
