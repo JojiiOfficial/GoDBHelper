@@ -119,7 +119,7 @@ func (dbhelper *DBhelper) insert(tableName string, data interface{}) (*sql.Resul
 			}
 		}
 
-		typesBuff += "`" + colName + "`"
+		typesBuff += "`" + colName + "`, "
 
 		if colType == reflect.String {
 			cva = fmt.Sprintf("'%s'", cva)
