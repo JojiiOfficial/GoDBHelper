@@ -23,6 +23,13 @@ type SQLQuery struct {
 	Fparams      []string `json:"fparams"`
 }
 
+//InitSQL init sql obj
+type InitSQL struct {
+	Query   string
+	Params  string
+	FParams []string
+}
+
 //NewQueryChain QueryChain constructor
 func NewQueryChain(name string, order int) *QueryChain {
 	return &QueryChain{
@@ -87,13 +94,6 @@ func (dbhelper *DBhelper) LoadQueries(name, file string, chainOrder int) error {
 	}
 	dbhelper.AddQueryChain(*queries)
 	return nil
-}
-
-//InitSQL init sql obj
-type InitSQL struct {
-	Query   string
-	Params  string
-	FParams []string
 }
 
 //CreateInitVersionSQL creates SQLQuery[] for init version

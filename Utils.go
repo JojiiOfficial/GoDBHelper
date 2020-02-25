@@ -1,6 +1,10 @@
 package godbhelper
 
 import (
+	"errors"
+	"log"
+	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -55,4 +59,24 @@ func parsetTag(tagContent string) []string {
 		return strings.Split(tagContent, ",")
 	}
 	return []string{tagContent}
+}
+
+func strValueFromReflect(field reflect.Value) (string, error) {
+	switch field.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return strconv.FormatInt(field.Int(), 10), nil
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return strconv.FormatUint(field.Uint(), 10), nil
+	case reflect.String:
+		return field.String(), nil
+	case reflect.Float64:
+		return strconv.FormatFloat(field.Float(), 'f', 5, 64), nil
+	case reflect.Float32:
+		return strconv.FormatFloat(field.Float(), 'f', 5, 32), nil
+	case reflect.Bool:
+		return strconv.FormatBool(field.Bool()), nil
+	default:
+		log.Printf("Kind %s not found!\n", field.Kind().String())
+		return "", errors.New("Kind not supported")
+	}
 }

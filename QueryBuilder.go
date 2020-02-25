@@ -4,22 +4,16 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"reflect"
-	"strconv"
 )
 
-//SQLColumn a column in a table
-type SQLColumn struct {
-	Name string
-	Type string
-}
-
-func (dbhelper *DBhelper) create(name string, data interface{}, additionalFields ...SQLColumn) error {
+func (dbhelper *DBhelper) create(name string, data interface{}) error {
 	t := reflect.TypeOf(data)
 	if t.Kind() != reflect.Struct {
 		return ErrNoStruct
 	}
+
+	//Use name of struct if 'name' is empty
 	if len(name) == 0 {
 		name = t.Name()
 	}
@@ -29,14 +23,15 @@ func (dbhelper *DBhelper) create(name string, data interface{}, additionalFields
 
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Field(i)
-		tag := v.Type().Field(i).Tag
 
-		if getSQLKind(field.Kind(), dbhelper.dbKind) == "" {
+		//Determine column type according to the used database
+		colType := getSQLKind(field.Kind(), dbhelper.dbKind)
+		if colType == "" {
 			return errors.New("Kind " + field.Kind().String() + " not supported")
 		}
 
+		tag := v.Type().Field(i).Tag
 		colName := v.Type().Field(i).Name
-		colType := getSQLKind(field.Kind(), dbhelper.dbKind)
 
 		//Tags
 		dbTag := tag.Get(DBTag)
@@ -82,9 +77,11 @@ func (dbhelper *DBhelper) create(name string, data interface{}, additionalFields
 
 func (dbhelper *DBhelper) insert(tableName string, data interface{}) (*sql.Result, error) {
 	t := reflect.TypeOf(data)
+
 	if t.Kind() != reflect.Struct {
 		return nil, ErrNoStruct
 	}
+
 	if len(tableName) == 0 {
 		tableName = t.Name()
 	}
@@ -99,23 +96,10 @@ func (dbhelper *DBhelper) insert(tableName string, data interface{}) (*sql.Resul
 		colName := v.Type().Field(i).Name
 		colType := field.Kind()
 
-		var cva string
-		switch colType {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			cva = strconv.FormatInt(field.Int(), 10)
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			cva = strconv.FormatUint(field.Uint(), 10)
-		case reflect.String:
-			cva = field.String()
-		case reflect.Float64:
-			cva = strconv.FormatFloat(field.Float(), 'f', 5, 64)
-		case reflect.Float32:
-			cva = strconv.FormatFloat(field.Float(), 'f', 5, 32)
-		case reflect.Bool:
-			cva = strconv.FormatBool(field.Bool())
-		default:
-			log.Printf("Kind %s not found!\n", colType.String())
-			return nil, errors.New("Kind not supported")
+		//Get value of field as string
+		cva, err := strValueFromReflect(field)
+		if err != nil {
+			return nil, err
 		}
 
 		//Tags
@@ -128,23 +112,18 @@ func (dbhelper *DBhelper) insert(tableName string, data interface{}) (*sql.Resul
 
 		if len(ormtag) > 0 {
 			ormTagList := parsetTag(ormtag)
-			if strArrHas(ormTagList, "-") {
-				continue
-			}
-			if strArrHas(ormTagList, "ai") && !strArrHas(ormTagList, "iai") {
+			if strArrHas(ormTagList, "-") || (strArrHas(ormTagList, "ai") && !strArrHas(ormTagList, "pk")) {
 				continue
 			}
 		}
 
-		typesBuff += fmt.Sprintf("`%s`, ", colName)
+		typesBuff += "`" + colName + "`"
 
-		val := cva
-		switch colType {
-		case reflect.String:
-			val = fmt.Sprintf("'%s'", val)
+		if colType == reflect.String {
+			cva = fmt.Sprintf("'%s'", cva)
 		}
 
-		valuesBuff += val + ", "
+		valuesBuff += cva + ", "
 	}
 
 	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", tableName, typesBuff[:len(typesBuff)-2], valuesBuff[:len(valuesBuff)-2])
@@ -160,26 +139,67 @@ func getSQLKind(kind reflect.Kind, database dbsys) string {
 	switch kind {
 	case reflect.String:
 		return "TEXT"
-	case reflect.Int:
-		return "INT"
 	case reflect.Float32:
-		return "FLOAT"
+		return float32Value(database)
 	case reflect.Float64:
-		return "DOUBLE"
+		return float64Value(database)
 	case reflect.Bool:
 		return boolValue(database)
 	case reflect.Int8:
-		return "SMALLINT"
+		return intValue(database, 8, false)
 	case reflect.Int16:
-		return "MEDIUMINT"
-	case reflect.Int32:
-		return "INT"
+		return intValue(database, 16, false)
+	case reflect.Int, reflect.Int32:
+		return intValue(database, 32, false)
 	case reflect.Int64:
-		return "BIGINT"
+		return intValue(database, 64, false)
+	case reflect.Uint8:
+		return intValue(database, 8, true)
+	case reflect.Uint16:
+		return intValue(database, 16, true)
+	case reflect.Uint, reflect.Uint32:
+		return intValue(database, 32, true)
+	case reflect.Uint64:
+		return intValue(database, 64, true)
 	default:
 		return ""
 	}
 }
+
+func intValue(database dbsys, bitSize uint8, isUnsigned bool) string {
+	if database == Postgres {
+		return ""
+	}
+
+	var val string
+
+	switch bitSize {
+	case 8:
+		val = "SMALLINT"
+	case 16:
+		val = "MEDIUMINT"
+	case 32:
+		val = "INT"
+	case 64:
+		val = "BIGINT"
+	default:
+		return ""
+	}
+
+	if isUnsigned {
+		val += " UNSIGNED"
+	}
+	return val
+}
+
+func isUnsigned(kind reflect.Kind) bool {
+	switch kind {
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return true
+	}
+	return false
+}
+
 func float64Value(databate dbsys) string {
 	switch databate {
 	case Sqlite, SqliteEncrypted, Mysql:
@@ -189,6 +209,7 @@ func float64Value(databate dbsys) string {
 	}
 	return ""
 }
+
 func float32Value(databate dbsys) string {
 	switch databate {
 	case Sqlite, SqliteEncrypted, Mysql:
@@ -213,8 +234,8 @@ func boolValue(database dbsys) string {
 
 //CreateTable creates a table for struct
 //Leave name empty to use the name of the struct
-func (dbhelper *DBhelper) CreateTable(name string, data interface{}, additionalFields ...SQLColumn) error {
-	return dbhelper.handleErrHook(dbhelper.create(name, data, additionalFields...), "creating table "+name)
+func (dbhelper *DBhelper) CreateTable(name string, data interface{}) error {
+	return dbhelper.handleErrHook(dbhelper.create(name, data), "creating table "+name)
 }
 
 //Insert creates a table for struct
@@ -224,6 +245,7 @@ func (dbhelper *DBhelper) Insert(data interface{}, params ...string) (*sql.Resul
 	if len(params) > 0 {
 		tbName = params[0]
 	}
+
 	res, err := dbhelper.insert(tbName, data)
 	return res, dbhelper.handleErrHook(err, "inserting "+tbName)
 }

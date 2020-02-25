@@ -77,7 +77,7 @@ func (dbhelper *DBhelper) initDBVersion() error {
 	dbhelper.QueryRow(&c, "SELECT COUNT(*) FROM "+TableDBVersion)
 
 	if c == 0 {
-		dbhelper.Exec(fmt.Sprintf("INSERT INTO %s (version) VALUES ($1)", TableDBVersion), -1.0)
+		dbhelper.Exec(fmt.Sprintf("INSERT INTO %s (version) VALUES (?)", TableDBVersion), -1.0)
 	} else if c > 1 {
 		return ErrVersionStoreTooManyVersions
 	}
@@ -90,7 +90,7 @@ func (dbhelper *DBhelper) initDBVersion() error {
 func (dbhelper *DBhelper) saveVersion(version float32) {
 	if dbhelper.Options.StoreVersionInDB {
 		dbhelper.Exec("DELETE FROM " + TableDBVersion)
-		dbhelper.Exec(fmt.Sprintf("INSERT INTO %s (version) VALUES ($1)", TableDBVersion), version)
+		dbhelper.Exec(fmt.Sprintf("INSERT INTO %s (version) VALUES (?)", TableDBVersion), version)
 	}
 	dbhelper.CurrentVersion = version
 }
@@ -182,7 +182,7 @@ func (dbhelper *DBhelper) Open(params ...string) (*DBhelper, error) {
 			if err != nil {
 				return dbhelper, err
 			}
-			uri, err := buildMySQLURI(params[0], params[1], params[2], dbname, (uint16)(port))
+			uri, err := BuildMySQLURI(params[0], params[1], params[2], dbname, (uint16)(port))
 			if err != nil {
 				return dbhelper, err
 			}
@@ -206,7 +206,7 @@ func (dbhelper *DBhelper) Open(params ...string) (*DBhelper, error) {
 			if err != nil {
 				return dbhelper, err
 			}
-			uri, err := buildPostgresString(params[0], params[1], params[2], dbname, (uint16)(port))
+			uri, err := BuildPostgresString(params[0], params[1], params[2], dbname, (uint16)(port))
 			if err != nil {
 				return dbhelper, err
 			}
@@ -282,6 +282,7 @@ func (dbhelper *DBhelper) RunUpdate(options ...bool) error {
 	}
 	dbhelper.checkColors()
 
+	//Check options
 	var fullUpdate, dropAllTables bool
 	for i, v := range options {
 		switch i {
@@ -292,6 +293,7 @@ func (dbhelper *DBhelper) RunUpdate(options ...bool) error {
 		}
 	}
 
+	//Print info
 	if dbhelper.Options.Debug {
 		var add string
 		if fullUpdate {
@@ -300,6 +302,7 @@ func (dbhelper *DBhelper) RunUpdate(options ...bool) error {
 		fmt.Printf("Updating database %s\n", add)
 	}
 
+	//Set current version to 0 to run every query
 	if fullUpdate {
 		dbhelper.CurrentVersion = 0
 	}
@@ -316,21 +319,27 @@ func (dbhelper *DBhelper) RunUpdate(options ...bool) error {
 		fmt.Println()
 	}
 
+	//Sort QueryChains to run in correct order
 	sort.SliceStable(dbhelper.QueryChains, func(i, j int) bool {
 		return dbhelper.QueryChains[i].Order < dbhelper.QueryChains[j].Order
 	})
+
 	for _, chain := range dbhelper.QueryChains {
 		if dbhelper.Options.Debug {
 			color.New(color.Underline).Println("chain:", chain.Name)
 		}
+
+		//Sort Queries in current chain by version to run in correct order
 		sort.SliceStable(chain.Queries, func(i, j int) bool {
 			return chain.Queries[i].VersionAdded < chain.Queries[j].VersionAdded
 		})
-		o := 0
+
+		countSuccesfulQueries := 0
 		for _, query := range chain.Queries {
 			if len(query.QueryString)+len(query.FqueryString) == 0 {
 				continue
 			}
+
 			if query.VersionAdded > dbhelper.CurrentVersion {
 				if dbhelper.Options.Debug {
 					q := fmt.Sprintf(query.FqueryString, stringArrToInterface(query.Fparams)...)
@@ -353,20 +362,25 @@ func (dbhelper *DBhelper) RunUpdate(options ...bool) error {
 					}
 					noError = false
 				}
+
 				if query.VersionAdded > newVersion {
 					newVersion = query.VersionAdded
 				}
+
 				if dbhelper.Options.Debug && err == nil {
 					fmt.Printf(" -> %s\n", color.New(color.FgGreen).SprintFunc()("success"))
-					o++
+					countSuccesfulQueries++
 				}
+
 				c++
 			}
 		}
-		if dbhelper.Options.Debug && o > 0 {
+
+		if dbhelper.Options.Debug && countSuccesfulQueries > 0 {
 			fmt.Println()
 		}
 	}
+
 	if dbhelper.Options.Debug {
 		msg := "Updated %d Database queries with errors\n"
 		if noError {
@@ -374,6 +388,8 @@ func (dbhelper *DBhelper) RunUpdate(options ...bool) error {
 		}
 		fmt.Printf(msg, c)
 	}
+
+	//Save new version
 	dbhelper.saveVersion(newVersion)
 	return nil
 }
