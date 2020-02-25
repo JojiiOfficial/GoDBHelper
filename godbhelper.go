@@ -142,15 +142,25 @@ func (dbhelper *DBhelper) Open(params ...string) (*DBhelper, error) {
 	switch dbhelper.dbKind {
 	case Sqlite:
 		{
+			if len(params) < 1 {
+				return dbhelper, ErrSqliteMissingArg
+			}
+
+			//Parsing flags
 			var dsnFlags string
 			if len(params) > 1 {
 				dsnFlags = parseDSNstring(params[1:]...)
 			}
+
+			//Create string
 			dsn := "file:" + params[0] + dsnFlags
+
+			//Connect
 			db, err := sqlx.Open("sqlite3", dsn)
 			if err != nil {
 				return dbhelper, err
 			}
+
 			dbhelper.DB = db
 			dbhelper.IsOpen = true
 		}
@@ -159,13 +169,21 @@ func (dbhelper *DBhelper) Open(params ...string) (*DBhelper, error) {
 			if len(params) < 2 {
 				return dbhelper, ErrSqliteEncryptMissingArg
 			}
+			//Set key param
 			params[1] = "_crypto_key=" + params[1]
+
+			//Parse other flags
 			dsnFlags := parseDSNstring(params[1:]...)
+
+			//Create string
 			dsn := "file:" + params[0] + dsnFlags
+
+			//Open database
 			db, err := sqlx.Open("sqlite3", dsn)
 			if err != nil {
 				return dbhelper, err
 			}
+
 			dbhelper.DB = db
 			dbhelper.IsOpen = true
 		}
@@ -174,22 +192,30 @@ func (dbhelper *DBhelper) Open(params ...string) (*DBhelper, error) {
 			if len(params) < 4 {
 				return dbhelper, ErrMysqlURIMissingArg
 			}
-			var dbname string
+
+			//Use username as db as default
+			dbname := params[0]
 			if len(params) > 4 {
 				dbname = params[4]
 			}
+
+			//Parse Port
 			port, err := strconv.ParseUint(params[3], 10, 16)
 			if err != nil {
 				return dbhelper, err
 			}
-			uri, err := BuildMySQLURI(params[0], params[1], params[2], dbname, (uint16)(port))
+
+			uri, err := BuildDSN(Mysql, params[0], params[1], params[2], dbname, (uint16)(port), params[5:]...)
 			if err != nil {
 				return dbhelper, err
 			}
+
+			//Open database
 			db, err := sqlx.Open("mysql", uri)
 			if err != nil {
 				return dbhelper, err
 			}
+
 			dbhelper.DB = db
 			dbhelper.IsOpen = true
 		}
@@ -198,22 +224,31 @@ func (dbhelper *DBhelper) Open(params ...string) (*DBhelper, error) {
 			if len(params) < 4 {
 				return dbhelper, ErrPostgresURIMissingArg
 			}
-			var dbname string
+
+			//Use username as default database
+			dbname := params[0]
 			if len(params) > 4 {
 				dbname = params[4]
 			}
+
+			//Parse port
 			port, err := strconv.ParseUint(params[3], 10, 16)
 			if err != nil {
 				return dbhelper, err
 			}
-			uri, err := BuildPostgresString(params[0], params[1], params[2], dbname, (uint16)(port))
+
+			//Build connection string
+			uri, err := BuildDSN(Postgres, params[0], params[1], params[2], dbname, (uint16)(port))
 			if err != nil {
 				return dbhelper, err
 			}
+
+			//Connect to database
 			db, err := sqlx.Open("postgres", uri)
 			if err != nil {
 				return dbhelper, err
 			}
+
 			dbhelper.DB = db
 			dbhelper.IsOpen = true
 		}
@@ -228,6 +263,7 @@ func (dbhelper *DBhelper) Open(params ...string) (*DBhelper, error) {
 	} else if dbhelper.Options.Debug {
 		fmt.Println("Note: No DBVersion was restored!")
 	}
+
 	return dbhelper, nil
 }
 

@@ -18,11 +18,17 @@ var (
 	//ErrSqliteEncryptMissingArg error if Open() SqliteEncrypt and missing argument
 	ErrSqliteEncryptMissingArg = errors.New("SqliteEncrypt missing argument. Use Open(file, key)")
 
+	//ErrSqliteMissingArg error if Open() Sqlite and missing argument
+	ErrSqliteMissingArg = errors.New("Sqlite missing argument. Use Open(file)")
+
 	//ErrVersionStoreTooManyVersions if VersionStore contains more than one version
 	ErrVersionStoreTooManyVersions = errors.New("Too many versions stored in VersionStore")
 
 	//ErrCantStoreVersionInDB err if running update and StoreVersionInDB=false
 	ErrCantStoreVersionInDB = errors.New("Can't store Version in Database. Set StoreVersionInDB=true")
+
+	//ErrInvalidDatabase an invalid dbsys was used
+	ErrInvalidDatabase = errors.New("Invalid database")
 
 	//QueryBuilder errors
 
