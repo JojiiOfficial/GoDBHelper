@@ -13,15 +13,22 @@ type InsertOption struct {
 	IgnoreFields []string
 }
 
-func (dbhelper *DBhelper) create(name string, data interface{}) error {
+//CreateOption options for inserting structs into DB
+type CreateOption struct {
+	TableName   string
+	IfNotExists bool
+}
+
+func (dbhelper *DBhelper) create(data interface{}, option *CreateOption) error {
 	t := reflect.TypeOf(data)
 	if t.Kind() != reflect.Struct {
 		return ErrNoStruct
 	}
 
-	//Use name of struct if 'name' is empty
-	if len(name) == 0 {
-		name = t.Name()
+	tableName := t.Name()
+
+	if option != nil && len(option.TableName) > 0 {
+		tableName = option.TableName
 	}
 
 	v := reflect.ValueOf(data)
@@ -75,7 +82,13 @@ func (dbhelper *DBhelper) create(name string, data interface{}) error {
 		pk = fmt.Sprintf(", PRIMARY KEY (`%s`)", pk)
 	}
 
-	query := fmt.Sprintf("CREATE TABLE `%s` (%s%s)", name, sbuff[:len(sbuff)-2], pk)
+	//Add 'if not exists' to the query if required
+	tadd := ""
+	if option != nil && option.IfNotExists {
+		tadd = "IF NOT EXISTS"
+	}
+
+	query := fmt.Sprintf("CREATE TABLE %s `%s` (%s%s)", tadd, tableName, sbuff[:len(sbuff)-2], pk)
 	_, err := dbhelper.Exec(query)
 	if dbhelper.Options.Debug {
 		fmt.Println(query)
@@ -254,15 +267,19 @@ func boolValue(database dbsys) string {
 
 //CreateTable creates a table for struct
 //Leave name empty to use the name of the struct
-func (dbhelper *DBhelper) CreateTable(name string, data interface{}) error {
-	return dbhelper.handleErrHook(dbhelper.create(name, data), "creating table "+name)
+func (dbhelper *DBhelper) CreateTable(data interface{}, options ...*CreateOption) error {
+	var option *CreateOption
+	if len(options) > 0 {
+		option = options[0]
+	}
+	return dbhelper.handleErrHook(dbhelper.create(data, option), "creating table ")
 }
 
 //Insert creates a table for struct
 //Leave name empty to use the name of the struct
 func (dbhelper *DBhelper) Insert(data interface{}, options ...*InsertOption) (*sql.Result, error) {
 	var option *InsertOption
-	if len(options) > 0 && options[0] != nil {
+	if len(options) > 0 {
 		option = options[0]
 	}
 
