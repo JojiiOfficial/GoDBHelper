@@ -32,3 +32,10 @@ const (
 	//DBTag db-tag
 	DBTag = "db"
 )
+
+//Tag values
+const (
+	TagPrimaryKey    = "pk"
+	TagAutoincrement = "ai"
+	TagNotNull       = "nn"
+)

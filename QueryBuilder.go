@@ -49,12 +49,14 @@ func (dbhelper *DBhelper) create(name string, data interface{}) error {
 
 			for _, tag := range ormTagList {
 				switch tag {
-				case "pk":
+				case TagPrimaryKey:
 					pk = colName
-				case "ai":
+				case TagAutoincrement:
 					{
 						colType += " AUTO_INCREMENT"
 					}
+				case TagNotNull:
+					colType += " NOT NULL"
 				}
 			}
 		}
