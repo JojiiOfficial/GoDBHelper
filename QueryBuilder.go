@@ -149,35 +149,9 @@ func (dbhelper *DBhelper) insert(data interface{}, option *InsertOption) (*sql.R
 		field := v.Field(i)
 		tag := v.Type().Field(i).Tag
 
-		colName := v.Type().Field(i).Name
-		colType := field.Kind()
-
-		//Get value of field as string
-		cva, defaultVal, err := strValueFromReflect(field)
-		if err != nil {
-			return nil, err
-		}
-
-		//Skip empty fields
-		if len(cva) == 0 && (option != nil && !option.FillNotSetFields) {
-			continue
-		}
-
-		//Set default value if not skipping
-		if len(cva) == 0 {
-			cva = defaultVal
-		}
-
 		//Tags
 		dbTag := tag.Get(DBTag)
 		ormtag := tag.Get(OrmTag)
-
-		if len(dbTag) > 0 {
-			if dbTag == TagIgnore {
-				continue
-			}
-			colName = dbTag
-		}
 
 		if len(ormtag) > 0 {
 			ormTagList := parsetTag(ormtag)
@@ -193,9 +167,35 @@ func (dbhelper *DBhelper) insert(data interface{}, option *InsertOption) (*sql.R
 			}
 		}
 
+		colName := v.Type().Field(i).Name
+		colType := field.Kind()
+
+		if len(dbTag) > 0 {
+			if dbTag == TagIgnore {
+				continue
+			}
+			colName = dbTag
+		}
+
 		//If columnName is on Ignore list, skip it
 		if option != nil && len(option.IgnoreFields) > 0 && strArrHas(option.IgnoreFields, colName) {
 			continue
+		}
+
+		//Get value of field as string
+		cva, defaultVal, err := strValueFromReflect(field)
+		if err != nil {
+			return nil, err
+		}
+
+		//Skip empty fields
+		if len(cva) == 0 && (option != nil && !option.FillNotSetFields) {
+			continue
+		}
+
+		//Set default value if not skipping
+		if len(cva) == 0 {
+			cva = defaultVal
 		}
 
 		typesBuff += "`" + colName + "`, "
