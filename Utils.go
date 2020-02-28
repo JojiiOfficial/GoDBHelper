@@ -2,6 +2,7 @@ package godbhelper
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"reflect"
 	"strconv"
@@ -84,7 +85,7 @@ func strValueFromReflect(field reflect.Value) (string, string, error) {
 				if t.IsZero() {
 					return "", "0", nil
 				}
-				return strconv.FormatInt((field.Interface().(time.Time).Unix()), 10), "0", nil
+				return fmt.Sprintf("FROM_UNIXTIME(%d)", t.Unix()), "0", nil
 			default:
 				return "", "", errors.New("Struct " + field.Type().String() + " not supported")
 			}
